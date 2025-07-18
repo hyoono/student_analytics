@@ -34,6 +34,9 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-scholarship-tab" data-bs-toggle="pill" data-bs-target="#pills-scholarship" type="button" role="tab">Scholarship Eligibility</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-charts-tab" data-bs-toggle="pill" data-bs-target="#pills-charts" type="button" role="tab">Visual Analytics</button>
+            </li>
         </ul>
         
         <div class="tab-content" id="pills-tabContent">
@@ -250,13 +253,146 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Visual Analytics Tab -->
+            <div class="tab-pane fade" id="pills-charts" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Visual Analytics - Chart Generation</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Student Performance Charts</h5>
+                                <form method="POST" action="" class="mb-3">
+                                    <input type="hidden" name="action" value="grades_trend_chart">
+                                    <div class="mb-3">
+                                        <label class="form-label">Student ID</label>
+                                        <input type="text" class="form-control" name="student_id" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Width (400-1200)</label>
+                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Height (300-800)</label>
+                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-sm">Generate Grades Trend Chart</button>
+                                </form>
+                                
+                                <form method="POST" action="" class="mb-3">
+                                    <input type="hidden" name="action" value="subject_comparison_chart">
+                                    <div class="mb-3">
+                                        <label class="form-label">Student ID</label>
+                                        <input type="text" class="form-control" name="student_id" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Width</label>
+                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Height</label>
+                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-sm">Generate Subject Comparison Chart</button>
+                                </form>
+                                
+                                <form method="POST" action="" class="mb-3">
+                                    <input type="hidden" name="action" value="gpa_progress_chart">
+                                    <div class="mb-3">
+                                        <label class="form-label">Student ID</label>
+                                        <input type="text" class="form-control" name="student_id" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Width</label>
+                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Height</label>
+                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-warning btn-sm">Generate GPA Progress Chart</button>
+                                </form>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5>Class Analytics Charts</h5>
+                                <form method="POST" action="" class="mb-3">
+                                    <input type="hidden" name="action" value="performance_distribution_chart">
+                                    <div class="mb-3">
+                                        <label class="form-label">Class ID</label>
+                                        <input type="text" class="form-control" name="class_id" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Width</label>
+                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Height</label>
+                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-info btn-sm">Generate Performance Distribution Chart</button>
+                                </form>
+                                
+                                <form method="POST" action="" class="mb-3">
+                                    <input type="hidden" name="action" value="class_average_chart">
+                                    <div class="mb-3">
+                                        <label class="form-label">Class ID</label>
+                                        <input type="text" class="form-control" name="class_id" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Width</label>
+                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Height</label>
+                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-secondary btn-sm">Generate Class Average Chart</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <?php
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $client = new SoapClient(null, array(
-                    'location' => 'http://localhost/student_analytics/soap_server.php',
+                    'location' => 'http://localhost:8080/soap_server.php',
                     'uri' => 'http://localhost/student_analytics',
                     'trace' => 1
                 ));
@@ -306,22 +442,85 @@
                             $_POST['leadership_positions']
                         );
                         break;
+                        
+                    case 'grades_trend_chart':
+                        $result = $client->generateGradesTrendChart(
+                            $_POST['student_id'],
+                            $_POST['width'],
+                            $_POST['height']
+                        );
+                        break;
+                        
+                    case 'subject_comparison_chart':
+                        $result = $client->generateSubjectComparisonChart(
+                            $_POST['student_id'],
+                            $_POST['width'],
+                            $_POST['height']
+                        );
+                        break;
+                        
+                    case 'gpa_progress_chart':
+                        $result = $client->generateGPAProgressChart(
+                            $_POST['student_id'],
+                            $_POST['width'],
+                            $_POST['height']
+                        );
+                        break;
+                        
+                    case 'performance_distribution_chart':
+                        $result = $client->generatePerformanceDistributionChart(
+                            $_POST['class_id'],
+                            $_POST['width'],
+                            $_POST['height']
+                        );
+                        break;
+                        
+                    case 'class_average_chart':
+                        $result = $client->generateClassAverageChart(
+                            $_POST['class_id'],
+                            $_POST['width'],
+                            $_POST['height']
+                        );
+                        break;
                 }
                 
                 if ($result) {
                     $data = json_decode($result, true);
                     echo '<div class="result-card">';
                     echo '<h5>Results for ' . ucfirst(str_replace('_', ' ', $action)) . '</h5>';
-                    echo '<div class="row">';
                     
-                    foreach ($data as $key => $value) {
-                        $label = ucwords(str_replace('_', ' ', $key));
-                        echo '<div class="col-md-6 mb-2">';
-                        echo "<strong>$label:</strong> $value";
+                    // Check if this is a chart result
+                    if (isset($data['chartType']) && isset($data['imageData'])) {
+                        if ($data['success']) {
+                            echo '<div class="text-center">';
+                            echo '<img src="data:image/png;base64,' . $data['imageData'] . '" class="img-fluid border" alt="Generated Chart" style="max-width: 100%; height: auto;">';
+                            echo '</div>';
+                            echo '<div class="row mt-3">';
+                            foreach ($data as $key => $value) {
+                                if ($key !== 'imageData') {
+                                    $label = ucwords(str_replace('_', ' ', $key));
+                                    echo '<div class="col-md-6 mb-2">';
+                                    echo "<strong>$label:</strong> $value";
+                                    echo '</div>';
+                                }
+                            }
+                            echo '</div>';
+                        } else {
+                            echo '<div class="alert alert-danger">';
+                            echo '<strong>Chart Generation Failed:</strong> ' . $data['error'];
+                            echo '</div>';
+                        }
+                    } else {
+                        // Regular non-chart result
+                        echo '<div class="row">';
+                        foreach ($data as $key => $value) {
+                            $label = ucwords(str_replace('_', ' ', $key));
+                            echo '<div class="col-md-6 mb-2">';
+                            echo "<strong>$label:</strong> $value";
+                            echo '</div>';
+                        }
                         echo '</div>';
                     }
-                    
-                    echo '</div>';
                     echo '</div>';
                 }
                 
