@@ -17,40 +17,58 @@ class StudentAnalyticsService {
     
     /**
      * Grade Analysis - Heavy computation with statistical analysis
+     * Updated for Mapua MCL grading system
      */
-    public function analyzeGrades($studentId, $currentGrades, $subjectWeights, $historicalGrades) {
+    public function analyzeGrades($studentId, $currentGrades, $courseUnits, $historicalGrades, $gradeFormat = 'auto') {
         // Parse input data
         $grades = array_map('floatval', explode(',', $currentGrades));
-        $weights = array_map('floatval', explode(',', $subjectWeights));
+        $units = array_map('floatval', explode(',', $courseUnits));
         $historical = array_map(function($term) {
             return array_map('floatval', explode(',', $term));
         }, explode(';', $historicalGrades));
         
-        // Heavy computation: Calculate weighted average
-        $weightedSum = 0;
-        $totalWeight = 0;
-        for ($i = 0; $i < count($grades); $i++) {
-            $weight = isset($weights[$i]) ? $weights[$i] : 1;
-            $weightedSum += $grades[$i] * $weight;
-            $totalWeight += $weight;
+        // Detect grade format if auto
+        if ($gradeFormat === 'auto') {
+            $gradeFormat = $this->detectGradeFormat($grades);
         }
-        $weightedAverage = $totalWeight > 0 ? $weightedSum / $totalWeight : 0;
         
-        // Convert to GPA (4.0 scale)
-        $currentGpa = $this->convertToGPA($weightedAverage);
+        // Calculate Term Weighted Average (TWA)
+        $twa = $this->calculateTWA($grades, $units, $gradeFormat);
         
-        // Grade distribution analysis
-        $gradeDistribution = $this->calculateGradeDistribution($grades);
+        // Calculate weighted average using course units
+        $weightedSum = 0;
+        $totalUnits = 0;
+        for ($i = 0; $i < count($grades); $i++) {
+            $unit = isset($units[$i]) ? $units[$i] : 3;
+            $grade = $grades[$i];
+            
+            // Convert to consistent format for calculations
+            if ($gradeFormat === 'transmuted') {
+                $grade = $this->convertTransmutedToRaw($grade);
+            }
+            
+            $weightedSum += $grade * $unit;
+            $totalUnits += $unit;
+        }
+        $weightedAverage = $totalUnits > 0 ? $weightedSum / $totalUnits : 0;
+        
+        // Grade distribution analysis (using raw grades for consistency)
+        $rawGrades = $grades;
+        if ($gradeFormat === 'transmuted') {
+            $rawGrades = array_map([$this, 'convertTransmutedToRaw'], $grades);
+        }
+        $gradeDistribution = $this->calculateGradeDistribution($rawGrades);
         
         // Performance trend analysis
         $performanceTrend = $this->analyzePerformanceTrend($historical, $grades);
         
         // Generate suggestions based on analysis
-        $suggestions = $this->generateGradeSuggestions($grades, $weights, $performanceTrend);
+        $suggestions = $this->generateGradeSuggestions($grades, $units, $performanceTrend, $gradeFormat);
         
         return json_encode([
+            'twa' => $twa,
             'weightedAverage' => round($weightedAverage, 2),
-            'currentGpa' => round($currentGpa, 2),
+            'gradeFormat' => $gradeFormat,
             'gradeDistribution' => $gradeDistribution,
             'performanceTrend' => $performanceTrend,
             'suggestions' => $suggestions
@@ -58,42 +76,38 @@ class StudentAnalyticsService {
     }
     
     /**
-     * Subject Performance Comparison - Complex comparative analysis
+     * Course Performance Comparison - Complex comparative analysis
+     * Updated for Mapua MCL course-based system
      */
-    public function compareSubjects($studentId, $subjectNames, $subjectGrades, $classAverages, $creditHours) {
-        $subjects = explode(',', $subjectNames);
-        $grades = array_map('floatval', explode(',', $subjectGrades));
+    public function compareCourses($studentId, $courseNames, $studentGrades, $classAverages, $creditUnits) {
+        $courses = explode(',', $courseNames);
+        $grades = array_map('floatval', explode(',', $studentGrades));
         $averages = array_map('floatval', explode(',', $classAverages));
-        $credits = array_map('intval', explode(',', $creditHours));
+        $units = array_map('floatval', explode(',', $creditUnits));
         
-        // Find best and worst performing subjects
+        // Detect grade format
+        $gradeFormat = $this->detectGradeFormat($grades);
+        
+        // Find best and worst performing courses
         $maxGrade = max($grades);
         $minGrade = min($grades);
-        $bestSubjectIndex = array_search($maxGrade, $grades);
-        $worstSubjectIndex = array_search($minGrade, $grades);
+        $bestCourseIndex = array_search($maxGrade, $grades);
+        $worstCourseIndex = array_search($minGrade, $grades);
         
-        $bestSubject = $subjects[$bestSubjectIndex];
-        $weakestSubject = $subjects[$worstSubjectIndex];
+        $bestCourse = $courses[$bestCourseIndex];
+        $weakestCourse = $courses[$worstCourseIndex];
         
-        // Calculate overall GPA weighted by credit hours
-        $totalGradePoints = 0;
-        $totalCredits = 0;
-        for ($i = 0; $i < count($grades); $i++) {
-            $gpa = $this->convertToGPA($grades[$i]);
-            $credit = isset($credits[$i]) ? $credits[$i] : 3;
-            $totalGradePoints += $gpa * $credit;
-            $totalCredits += $credit;
-        }
-        $overallGpa = $totalCredits > 0 ? $totalGradePoints / $totalCredits : 0;
+        // Calculate TWA using course units
+        $twa = $this->calculateTWA($grades, $units, $gradeFormat);
         
         // Compare with class averages
-        $subjectsAboveAverage = [];
-        $subjectsBelowAverage = [];
+        $coursesAboveAverage = [];
+        $coursesBelowAverage = [];
         for ($i = 0; $i < count($grades); $i++) {
             if ($grades[$i] > $averages[$i]) {
-                $subjectsAboveAverage[] = $subjects[$i];
+                $coursesAboveAverage[] = $courses[$i];
             } else {
-                $subjectsBelowAverage[] = $subjects[$i];
+                $coursesBelowAverage[] = $courses[$i];
             }
         }
         
@@ -106,16 +120,17 @@ class StudentAnalyticsService {
         $performanceVariance = $variance / count($grades);
         
         // Generate recommendations
-        $recommendations = $this->generateSubjectRecommendations($subjects, $grades, $averages);
+        $recommendations = $this->generateCourseRecommendations($courses, $grades, $averages);
         
         return json_encode([
-            'bestSubject' => $bestSubject,
+            'bestCourse' => $bestCourse,
             'bestGrade' => $maxGrade,
-            'weakestSubject' => $weakestSubject,
+            'weakestCourse' => $weakestCourse,
             'weakestGrade' => $minGrade,
-            'overallGpa' => round($overallGpa, 2),
-            'subjectsAboveAverage' => implode(',', $subjectsAboveAverage),
-            'subjectsBelowAverage' => implode(',', $subjectsBelowAverage),
+            'twa' => $twa,
+            'gradeFormat' => $gradeFormat,
+            'coursesAboveAverage' => implode(',', $coursesAboveAverage),
+            'coursesBelowAverage' => implode(',', $coursesBelowAverage),
             'performanceVariance' => round($performanceVariance, 2),
             'recommendations' => $recommendations
         ]);
@@ -123,26 +138,38 @@ class StudentAnalyticsService {
     
     /**
      * Predictive Performance Modeling - Machine learning simulation
+     * Updated for Mapua MCL system with course hours and credit units
      */
-    public function generatePrediction($studentId, $historicalGrades, $attendanceRate, $participationScore, $studyHoursPerWeek, $extracurricularHours) {
+    public function generatePrediction($studentId, $historicalGrades, $attendanceRate, $courseHours, $creditUnits, $gradeFormat = 'auto') {
         $grades = array_map('floatval', explode(',', $historicalGrades));
         $attendance = floatval($attendanceRate);
-        $participation = floatval($participationScore);
-        $studyHours = intval($studyHoursPerWeek);
-        $extraHours = intval($extracurricularHours);
+        $hours = floatval($courseHours);
+        $units = floatval($creditUnits);
+        
+        // Detect grade format if auto
+        if ($gradeFormat === 'auto') {
+            $gradeFormat = $this->detectGradeFormat($grades);
+        }
         
         // Complex predictive algorithm simulation
         $trendFactor = $this->calculateTrendFactor($grades);
-        $attendanceFactor = ($attendance / 100) * 0.3;
-        $participationFactor = ($participation / 10) * 0.2;
-        $studyFactor = min($studyHours / 40, 1) * 0.3;
-        $balanceFactor = ($extraHours > 0 && $extraHours < 15) ? 0.2 : 0.1;
+        $attendanceFactor = ($attendance / 100) * 0.4; // Increased weight
+        $courseHoursFactor = min($hours / 60, 1) * 0.3; // Course hours factor
+        $creditUnitsFactor = min($units / 21, 1) * 0.3; // Credit units factor
         
         // Weighted prediction model
         $basePrediction = end($grades);
-        $adjustmentFactor = $attendanceFactor + $participationFactor + $studyFactor + $balanceFactor;
-        $predictedGrade = $basePrediction + ($trendFactor * 10) + ($adjustmentFactor * 15);
-        $predictedGrade = max(0, min(100, $predictedGrade));
+        $adjustmentFactor = $attendanceFactor + $courseHoursFactor + $creditUnitsFactor;
+        
+        if ($gradeFormat === 'transmuted') {
+            // For transmuted grades, prediction should be in transmuted format
+            $predictedGrade = $basePrediction + ($trendFactor * 0.5) + ($adjustmentFactor * 0.5);
+            $predictedGrade = max(1.00, min(5.00, $predictedGrade));
+        } else {
+            // For raw grades, prediction should be in raw format
+            $predictedGrade = $basePrediction + ($trendFactor * 10) + ($adjustmentFactor * 15);
+            $predictedGrade = max(0, min(100, $predictedGrade));
+        }
         
         // Risk assessment
         $riskFactors = [];
@@ -152,13 +179,13 @@ class StudentAnalyticsService {
             $riskFactors[] = "Low attendance";
             $riskScore += 3;
         }
-        if ($participation < 6) {
-            $riskFactors[] = "Low participation";
+        if ($hours < 30) {
+            $riskFactors[] = "Insufficient course hours";
             $riskScore += 2;
         }
-        if ($studyHours < 15) {
-            $riskFactors[] = "Insufficient study time";
-            $riskScore += 2;
+        if ($units < 15) {
+            $riskFactors[] = "Low credit unit load";
+            $riskScore += 1;
         }
         if ($trendFactor < -0.5) {
             $riskFactors[] = "Declining grade trend";
@@ -177,16 +204,17 @@ class StudentAnalyticsService {
         
         // Key factors identification
         $keyFactors = [];
-        if ($attendanceFactor > 0.2) $keyFactors[] = "Good attendance";
-        if ($participationFactor > 0.15) $keyFactors[] = "Active participation";
-        if ($studyFactor > 0.2) $keyFactors[] = "Adequate study time";
+        if ($attendanceFactor > 0.3) $keyFactors[] = "Good attendance";
+        if ($courseHoursFactor > 0.2) $keyFactors[] = "Adequate course hours";
+        if ($creditUnitsFactor > 0.2) $keyFactors[] = "Optimal credit load";
         if ($trendFactor > 0) $keyFactors[] = "Improving trend";
         
         // Generate recommendations
-        $recommendations = $this->generatePredictiveRecommendations($riskFactors, $studyHours, $participation, $attendance);
+        $recommendations = $this->generatePredictiveRecommendations($riskFactors, $hours, $units, $attendance);
         
         return json_encode([
             'predictedGrade' => round($predictedGrade, 2),
+            'gradeFormat' => $gradeFormat,
             'riskLevel' => $riskLevel,
             'confidenceScore' => round($confidenceScore, 2),
             'trendAnalysis' => $this->describeTrend($trendFactor),
@@ -197,77 +225,81 @@ class StudentAnalyticsService {
     }
     
     /**
-     * Scholarship Eligibility - Rule-based decision system
+     * Scholarship Eligibility - TWA-based decision system for Mapua MCL
+     * Updated to use TWA instead of GPA and simplified criteria
      */
-    public function checkEligibility($studentId, $gpa, $extracurriculars, $incomeLevel, $honors, $communityServiceHours, $leadershipPositions) {
-        $studentGpa = floatval($gpa);
-        $extraList = array_filter(explode(',', $extracurriculars));
-        $income = trim($incomeLevel);
-        $honorsList = array_filter(explode(',', $honors));
-        $serviceHours = intval($communityServiceHours);
-        $leadershipList = array_filter(explode(',', $leadershipPositions));
+    public function checkScholarshipEligibility($studentId, $twa, $creditUnits, $completedUnits) {
+        $studentTWA = floatval($twa);
+        $currentUnits = floatval($creditUnits);
+        $completedUnits = floatval($completedUnits);
         
-        // Scoring system (out of 100)
-        $gpaScore = 0;
-        $extracurricularScore = 0;
-        $serviceScore = 0;
-        $leadershipScore = 0;
-        $needBasedBonus = 0;
+        // Validate TWA range (1.00-5.00, where 1.00 is highest)
+        if ($studentTWA < 1.00 || $studentTWA > 5.00) {
+            return json_encode([
+                'eligibilityStatus' => 'Invalid TWA',
+                'error' => 'TWA must be between 1.00 and 5.00'
+            ]);
+        }
         
-        // GPA scoring (30 points max)
-        if ($studentGpa >= 3.8) $gpaScore = 30;
-        else if ($studentGpa >= 3.5) $gpaScore = 25;
-        else if ($studentGpa >= 3.2) $gpaScore = 20;
-        else if ($studentGpa >= 3.0) $gpaScore = 15;
-        else if ($studentGpa >= 2.8) $gpaScore = 10;
-        else $gpaScore = 5;
+        // Scoring system based on TWA and academic load
+        $twaScore = 0;
+        $academicLoadScore = 0;
+        $progressScore = 0;
         
-        // Extracurricular scoring (25 points max)
-        $extracurricularScore = min(count($extraList) * 5, 25);
+        // TWA scoring (70 points max) - Lower TWA = Higher score
+        if ($studentTWA <= 1.25) $twaScore = 70;
+        else if ($studentTWA <= 1.50) $twaScore = 60;
+        else if ($studentTWA <= 1.75) $twaScore = 50;
+        else if ($studentTWA <= 2.00) $twaScore = 40;
+        else if ($studentTWA <= 2.25) $twaScore = 30;
+        else if ($studentTWA <= 2.50) $twaScore = 20;
+        else if ($studentTWA <= 2.75) $twaScore = 10;
+        else if ($studentTWA <= 3.00) $twaScore = 5;
+        else $twaScore = 0; // Failed grades
         
-        // Community service scoring (20 points max)
-        if ($serviceHours >= 150) $serviceScore = 20;
-        else if ($serviceHours >= 100) $serviceScore = 15;
-        else if ($serviceHours >= 50) $serviceScore = 10;
-        else if ($serviceHours >= 25) $serviceScore = 5;
+        // Academic load scoring (20 points max)
+        if ($currentUnits >= 18) $academicLoadScore = 20;
+        else if ($currentUnits >= 15) $academicLoadScore = 15;
+        else if ($currentUnits >= 12) $academicLoadScore = 10;
+        else $academicLoadScore = 5;
         
-        // Leadership scoring (15 points max)
-        $leadershipScore = min(count($leadershipList) * 5, 15);
+        // Progress scoring (10 points max)
+        if ($completedUnits >= 100) $progressScore = 10;
+        else if ($completedUnits >= 75) $progressScore = 8;
+        else if ($completedUnits >= 50) $progressScore = 6;
+        else if ($completedUnits >= 25) $progressScore = 4;
+        else $progressScore = 2;
         
-        // Need-based bonus (10 points max)
-        if ($income === "Low") $needBasedBonus = 10;
-        else if ($income === "Middle") $needBasedBonus = 5;
+        $overallScore = $twaScore + $academicLoadScore + $progressScore;
         
-        // Honors bonus
-        $honorsBonus = min(count($honorsList) * 2, 10);
-        
-        $overallScore = $gpaScore + $extracurricularScore + $serviceScore + $leadershipScore + $needBasedBonus + $honorsBonus;
-        
-        // Determine eligibility status
+        // Determine eligibility status and scholarship categories
         $eligibilityStatus = "Not Eligible";
         $eligibleScholarships = [];
         
-        if ($overallScore >= 80) {
+        if ($overallScore >= 80 && $studentTWA <= 1.50) {
             $eligibilityStatus = "Eligible";
-            $eligibleScholarships = ["Merit Scholarship", "Leadership Award", "Community Service Grant"];
-            if ($income === "Low") $eligibleScholarships[] = "Need-Based Grant";
-        } else if ($overallScore >= 60) {
+            $eligibleScholarships = ["Academic Excellence Scholarship", "Dean's List Award"];
+            if ($studentTWA <= 1.25) {
+                $eligibleScholarships[] = "President's List Scholarship";
+            }
+        } else if ($overallScore >= 60 && $studentTWA <= 2.00) {
             $eligibilityStatus = "Conditional";
-            $eligibleScholarships = ["Partial Merit Scholarship"];
-            if ($income === "Low") $eligibleScholarships[] = "Need-Based Assistance";
+            $eligibleScholarships = ["Merit Scholarship", "Academic Achievement Award"];
+        } else if ($overallScore >= 40 && $studentTWA <= 2.50) {
+            $eligibilityStatus = "Conditional";
+            $eligibleScholarships = ["Academic Improvement Grant"];
         }
         
         // Generate recommendations
-        $recommendations = $this->generateScholarshipRecommendations($overallScore, $gpaScore, $extracurricularScore, $serviceScore, $leadershipScore);
+        $recommendations = $this->generateScholarshipRecommendations($overallScore, $twaScore, $academicLoadScore, $progressScore, $studentTWA);
         
         return json_encode([
             'eligibilityStatus' => $eligibilityStatus,
             'overallScore' => round($overallScore, 2),
-            'gpaScore' => round($gpaScore, 2),
-            'extracurricularScore' => round($extracurricularScore, 2),
-            'serviceScore' => round($serviceScore, 2),
-            'leadershipScore' => round($leadershipScore, 2),
-            'needBasedBonus' => round($needBasedBonus, 2),
+            'twa' => $studentTWA,
+            'twaScore' => round($twaScore, 2),
+            'academicLoadScore' => round($academicLoadScore, 2),
+            'progressScore' => round($progressScore, 2),
             'eligibleScholarships' => implode(',', $eligibleScholarships),
             'recommendations' => $recommendations
         ]);
@@ -338,7 +370,8 @@ class StudentAnalyticsService {
     }
     
     /**
-     * Generate GPA Progress Chart - Line chart showing GPA changes over terms
+     * Generate GPA Progress Chart - Line chart showing GPA/TWA changes over terms
+     * Updated to support both GPA and TWA data
      */
     public function generateGPAProgressChart($studentId, $width = 800, $height = 600) {
         // Validate dimensions
@@ -347,25 +380,25 @@ class StudentAnalyticsService {
         }
         
         try {
-            // Simulate GPA progress data
-            $gpaData = $this->getGPAProgressData($studentId);
+            // Simulate TWA progress data (updated for Mapua MCL system)
+            $twaData = $this->getTWAProgressData($studentId);
             
-            if (empty($gpaData)) {
-                return $this->createErrorResponse("Insufficient data for GPA progress chart");
+            if (empty($twaData)) {
+                return $this->createErrorResponse("Insufficient data for TWA progress chart");
             }
             
             $chart = new ChartGenerator($width, $height);
-            $base64Image = $chart->generateLineChart($gpaData, "GPA Progress Over Terms - Student $studentId", "Term", "GPA");
+            $base64Image = $chart->generateLineChart($twaData, "TWA Progress Over Terms - Student $studentId", "Term", "TWA");
             
             return json_encode([
                 'success' => true,
-                'chartType' => 'gpa_progress',
+                'chartType' => 'twa_progress',
                 'imageData' => $base64Image,
                 'studentId' => $studentId,
-                'terms' => count($gpaData)
+                'terms' => count($twaData)
             ]);
         } catch (Exception $e) {
-            return $this->createErrorResponse("Error generating GPA progress chart: " . $e->getMessage());
+            return $this->createErrorResponse("Error generating TWA progress chart: " . $e->getMessage());
         }
     }
     
@@ -449,26 +482,31 @@ class StudentAnalyticsService {
     }
     
     private function getSubjectComparisonData($studentId) {
-        // Simulate subject performance data
-        $baseGrade = 80 + ($studentId % 10);
+        // Simulate course performance data using Mapua MCL transmuted grades
+        $baseGrade = 1.50 + ($studentId % 10) * 0.05;
         return [
-            'Mathematics' => $baseGrade + rand(-5, 10),
-            'Physics' => $baseGrade + rand(-8, 8),
-            'Chemistry' => $baseGrade + rand(-6, 12),
-            'Biology' => $baseGrade + rand(-4, 6),
-            'Literature' => $baseGrade + rand(-10, 5)
+            'Mathematics' => round($baseGrade + rand(-3, 3) * 0.25, 2),
+            'Physics' => round($baseGrade + rand(-2, 4) * 0.25, 2),
+            'Chemistry' => round($baseGrade + rand(-4, 2) * 0.25, 2),
+            'Biology' => round($baseGrade + rand(-1, 3) * 0.25, 2),
+            'Literature' => round($baseGrade + rand(-2, 2) * 0.25, 2)
         ];
     }
     
     private function getGPAProgressData($studentId) {
-        // Simulate GPA progress over terms
-        $baseGPA = 3.0 + ($studentId % 10) * 0.05;
+        // Simulate TWA progress over terms for Mapua MCL system
+        return $this->getTWAProgressData($studentId);
+    }
+    
+    private function getTWAProgressData($studentId) {
+        // Simulate TWA progress over terms (1.00-5.00 scale)
+        $baseTWA = 1.50 + ($studentId % 10) * 0.05;
         return [
-            'Fall 2022' => round($baseGPA + 0.1, 2),
-            'Spring 2023' => round($baseGPA + 0.2, 2),
-            'Summer 2023' => round($baseGPA + 0.15, 2),
-            'Fall 2023' => round($baseGPA + 0.3, 2),
-            'Spring 2024' => round($baseGPA + 0.4, 2)
+            'Fall 2022' => round($baseTWA + 0.25, 2),
+            'Spring 2023' => round($baseTWA + 0.15, 2),
+            'Summer 2023' => round($baseTWA + 0.20, 2),
+            'Fall 2023' => round($baseTWA - 0.10, 2),
+            'Spring 2024' => round($baseTWA - 0.15, 2)
         ];
     }
     
@@ -518,6 +556,115 @@ class StudentAnalyticsService {
         if ($percentage >= 70) return 1.3;
         if ($percentage >= 67) return 1.0;
         return 0.0;
+    }
+    
+    /**
+     * Convert raw percentage grade to Mapua MCL transmuted grade
+     * @param float $rawGrade Raw percentage grade (0-100)
+     * @return float Mapua MCL transmuted grade (1.00-5.00)
+     */
+    private function convertRawToTransmuted($rawGrade) {
+        $rawGrade = floatval($rawGrade);
+        
+        if ($rawGrade >= 96) return 1.00;
+        if ($rawGrade >= 93) return 1.25;
+        if ($rawGrade >= 90) return 1.50;
+        if ($rawGrade >= 87) return 1.75;
+        if ($rawGrade >= 84) return 2.00;
+        if ($rawGrade >= 81) return 2.25;
+        if ($rawGrade >= 78) return 2.50;
+        if ($rawGrade >= 75) return 2.75;
+        if ($rawGrade >= 70) return 3.00;
+        return 5.00; // Failed
+    }
+    
+    /**
+     * Convert Mapua MCL transmuted grade to raw percentage
+     * @param float $transmutedGrade Mapua MCL transmuted grade (1.00-5.00)
+     * @return float Raw percentage grade (0-100)
+     */
+    private function convertTransmutedToRaw($transmutedGrade) {
+        $transmutedGrade = floatval($transmutedGrade);
+        
+        if ($transmutedGrade == 1.00) return 98;
+        if ($transmutedGrade == 1.25) return 94;
+        if ($transmutedGrade == 1.50) return 91;
+        if ($transmutedGrade == 1.75) return 88;
+        if ($transmutedGrade == 2.00) return 85;
+        if ($transmutedGrade == 2.25) return 82;
+        if ($transmutedGrade == 2.50) return 79;
+        if ($transmutedGrade == 2.75) return 76;
+        if ($transmutedGrade == 3.00) return 72;
+        return 0; // Failed
+    }
+    
+    /**
+     * Detect grade format (raw or transmuted)
+     * @param array $grades Array of grades
+     * @return string 'raw' or 'transmuted'
+     */
+    private function detectGradeFormat($grades) {
+        $transmutedCount = 0;
+        $total = count($grades);
+        
+        foreach ($grades as $grade) {
+            $grade = floatval($grade);
+            // If grade is in transmuted range and matches valid transmuted values
+            if ($grade >= 1.00 && $grade <= 5.00) {
+                $validTransmuted = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00];
+                if (in_array($grade, $validTransmuted)) {
+                    $transmutedCount++;
+                }
+            }
+        }
+        
+        // If majority are transmuted format, return transmuted
+        return ($transmutedCount > $total / 2) ? 'transmuted' : 'raw';
+    }
+    
+    /**
+     * Validate transmuted grade
+     * @param float $grade Grade to validate
+     * @return bool True if valid transmuted grade
+     */
+    private function isValidTransmutedGrade($grade) {
+        $validGrades = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 5.00];
+        return in_array(floatval($grade), $validGrades);
+    }
+    
+    /**
+     * Calculate Term Weighted Average (TWA)
+     * @param array $grades Array of grades
+     * @param array $units Array of course units
+     * @param string $gradeFormat 'raw', 'transmuted', or 'auto'
+     * @return float TWA value (1.00-5.00 scale)
+     */
+    private function calculateTWA($grades, $units, $gradeFormat = 'auto') {
+        if (empty($grades) || empty($units)) return 5.00;
+        
+        if ($gradeFormat === 'auto') {
+            $gradeFormat = $this->detectGradeFormat($grades);
+        }
+        
+        $totalWeightedGrades = 0;
+        $totalUnits = 0;
+        
+        for ($i = 0; $i < count($grades); $i++) {
+            $grade = floatval($grades[$i]);
+            $unit = isset($units[$i]) ? floatval($units[$i]) : 3; // Default 3 units
+            
+            // Convert to transmuted if needed
+            if ($gradeFormat === 'raw') {
+                $transmutedGrade = $this->convertRawToTransmuted($grade);
+            } else {
+                $transmutedGrade = $grade;
+            }
+            
+            $totalWeightedGrades += $transmutedGrade * $unit;
+            $totalUnits += $unit;
+        }
+        
+        return $totalUnits > 0 ? round($totalWeightedGrades / $totalUnits, 2) : 5.00;
     }
     
     private function calculateGradeDistribution($grades) {
@@ -582,11 +729,17 @@ class StudentAnalyticsService {
         return "Significant decline";
     }
     
-    private function generateGradeSuggestions($grades, $weights, $trend) {
+    private function generateGradeSuggestions($grades, $units, $trend, $gradeFormat) {
         $suggestions = [];
         
-        if (min($grades) < 70) {
-            $suggestions[] = "Focus on improving lowest performing subject";
+        // Convert grades to raw for analysis if needed
+        $rawGrades = $grades;
+        if ($gradeFormat === 'transmuted') {
+            $rawGrades = array_map([$this, 'convertTransmutedToRaw'], $grades);
+        }
+        
+        if (min($rawGrades) < 70) {
+            $suggestions[] = "Focus on improving lowest performing course";
         }
         
         if (strpos($trend, "declining") !== false || strpos($trend, "downward") !== false) {
@@ -594,19 +747,19 @@ class StudentAnalyticsService {
             $suggestions[] = "Seek additional tutoring support";
         }
         
-        if (array_sum($grades) / count($grades) < 80) {
+        if (array_sum($rawGrades) / count($rawGrades) < 80) {
             $suggestions[] = "Consider forming study groups";
         }
         
         return implode("; ", $suggestions);
     }
     
-    private function generateSubjectRecommendations($subjects, $grades, $averages) {
+    private function generateCourseRecommendations($courses, $grades, $averages) {
         $recommendations = [];
         
         for ($i = 0; $i < count($grades); $i++) {
             if ($grades[$i] < $averages[$i] - 5) {
-                $recommendations[] = "Focus additional study time on " . $subjects[$i];
+                $recommendations[] = "Focus additional study time on " . $courses[$i];
             }
         }
         
@@ -617,19 +770,19 @@ class StudentAnalyticsService {
         return implode("; ", $recommendations);
     }
     
-    private function generatePredictiveRecommendations($riskFactors, $studyHours, $participation, $attendance) {
+    private function generatePredictiveRecommendations($riskFactors, $courseHours, $creditUnits, $attendance) {
         $recommendations = [];
         
         if (in_array("Low attendance", $riskFactors)) {
             $recommendations[] = "Improve class attendance to above 90%";
         }
         
-        if (in_array("Low participation", $riskFactors)) {
-            $recommendations[] = "Increase class participation and engagement";
+        if (in_array("Insufficient course hours", $riskFactors)) {
+            $recommendations[] = "Increase course engagement and study time";
         }
         
-        if (in_array("Insufficient study time", $riskFactors)) {
-            $recommendations[] = "Increase weekly study hours to at least 20";
+        if (in_array("Low credit unit load", $riskFactors)) {
+            $recommendations[] = "Consider taking additional courses if academically prepared";
         }
         
         if (in_array("Declining grade trend", $riskFactors)) {
@@ -643,23 +796,23 @@ class StudentAnalyticsService {
         return implode("; ", $recommendations);
     }
     
-    private function generateScholarshipRecommendations($overall, $gpa, $extra, $service, $leadership) {
+    private function generateScholarshipRecommendations($overall, $twa, $academicLoad, $progress, $currentTWA) {
         $recommendations = [];
         
-        if ($gpa < 25) {
-            $recommendations[] = "Focus on improving GPA above 3.5";
+        if ($twa < 40) {
+            $recommendations[] = "Focus on improving TWA to 2.00 or below";
         }
         
-        if ($extra < 15) {
-            $recommendations[] = "Join additional extracurricular activities";
+        if ($academicLoad < 15) {
+            $recommendations[] = "Consider increasing credit unit load";
         }
         
-        if ($service < 10) {
-            $recommendations[] = "Increase community service involvement";
+        if ($progress < 6) {
+            $recommendations[] = "Maintain steady progress toward degree completion";
         }
         
-        if ($leadership < 10) {
-            $recommendations[] = "Seek leadership opportunities in organizations";
+        if ($currentTWA > 2.50) {
+            $recommendations[] = "Critical: Improve grades to maintain academic standing";
         }
         
         if ($overall >= 80) {
