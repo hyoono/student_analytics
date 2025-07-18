@@ -1,0 +1,23 @@
+{
+    "name": "hyoono/student-analytics",
+    "description": "Student Performance Analytics SOAP Server with Chart Generation",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Student Analytics Team"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "StudentAnalytics\\": "src/",
+            "StudentAnalytics\\Charts\\": "charts/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

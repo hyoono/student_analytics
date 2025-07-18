@@ -10,6 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
+// Include chart generation class
+require_once 'charts/ChartGenerator.php';
+
 class StudentAnalyticsService {
     
     /**
@@ -267,6 +270,238 @@ class StudentAnalyticsService {
             'needBasedBonus' => round($needBasedBonus, 2),
             'eligibleScholarships' => implode(',', $eligibleScholarships),
             'recommendations' => $recommendations
+        ]);
+    }
+    
+    /**
+     * Generate Grades Trend Chart - Line chart showing grade progression over time
+     */
+    public function generateGradesTrendChart($studentId, $width = 800, $height = 600) {
+        // Validate dimensions
+        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
+            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
+        }
+        
+        try {
+            // Simulate grade data over time (in real implementation, this would come from database)
+            $gradeData = $this->getGradesTrendData($studentId);
+            
+            if (empty($gradeData)) {
+                return $this->createErrorResponse("Insufficient data for grades trend chart");
+            }
+            
+            $chart = new ChartGenerator($width, $height);
+            $base64Image = $chart->generateLineChart($gradeData, "Grade Progression Over Time - Student $studentId", "Assessment Period", "Grade");
+            
+            return json_encode([
+                'success' => true,
+                'chartType' => 'grades_trend',
+                'imageData' => $base64Image,
+                'studentId' => $studentId,
+                'dataPoints' => count($gradeData)
+            ]);
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating grades trend chart: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate Subject Comparison Chart - Bar chart comparing performance across subjects
+     */
+    public function generateSubjectComparisonChart($studentId, $width = 800, $height = 600) {
+        // Validate dimensions
+        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
+            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
+        }
+        
+        try {
+            // Simulate subject performance data
+            $subjectData = $this->getSubjectComparisonData($studentId);
+            
+            if (empty($subjectData)) {
+                return $this->createErrorResponse("Insufficient data for subject comparison chart");
+            }
+            
+            $chart = new ChartGenerator($width, $height);
+            $base64Image = $chart->generateBarChart($subjectData, "Subject Performance Comparison - Student $studentId", "Subjects", "Grade");
+            
+            return json_encode([
+                'success' => true,
+                'chartType' => 'subject_comparison',
+                'imageData' => $base64Image,
+                'studentId' => $studentId,
+                'subjects' => count($subjectData)
+            ]);
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating subject comparison chart: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate GPA Progress Chart - Line chart showing GPA changes over terms
+     */
+    public function generateGPAProgressChart($studentId, $width = 800, $height = 600) {
+        // Validate dimensions
+        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
+            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
+        }
+        
+        try {
+            // Simulate GPA progress data
+            $gpaData = $this->getGPAProgressData($studentId);
+            
+            if (empty($gpaData)) {
+                return $this->createErrorResponse("Insufficient data for GPA progress chart");
+            }
+            
+            $chart = new ChartGenerator($width, $height);
+            $base64Image = $chart->generateLineChart($gpaData, "GPA Progress Over Terms - Student $studentId", "Term", "GPA");
+            
+            return json_encode([
+                'success' => true,
+                'chartType' => 'gpa_progress',
+                'imageData' => $base64Image,
+                'studentId' => $studentId,
+                'terms' => count($gpaData)
+            ]);
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating GPA progress chart: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate Performance Distribution Chart - Pie chart showing grade distribution in a class
+     */
+    public function generatePerformanceDistributionChart($classId, $width = 800, $height = 600) {
+        // Validate dimensions
+        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
+            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
+        }
+        
+        try {
+            // Simulate class performance distribution data
+            $distributionData = $this->getPerformanceDistributionData($classId);
+            
+            if (empty($distributionData)) {
+                return $this->createErrorResponse("Insufficient data for performance distribution chart");
+            }
+            
+            $chart = new ChartGenerator($width, $height);
+            $base64Image = $chart->generatePieChart($distributionData, "Grade Distribution - Class $classId");
+            
+            return json_encode([
+                'success' => true,
+                'chartType' => 'performance_distribution',
+                'imageData' => $base64Image,
+                'classId' => $classId,
+                'totalStudents' => array_sum(array_values($distributionData))
+            ]);
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating performance distribution chart: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate Class Average Chart - Bar chart comparing class averages by subject
+     */
+    public function generateClassAverageChart($classId, $width = 800, $height = 600) {
+        // Validate dimensions
+        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
+            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
+        }
+        
+        try {
+            // Simulate class average data by subject
+            $classAverageData = $this->getClassAverageData($classId);
+            
+            if (empty($classAverageData)) {
+                return $this->createErrorResponse("Insufficient data for class average chart");
+            }
+            
+            $chart = new ChartGenerator($width, $height);
+            $base64Image = $chart->generateBarChart($classAverageData, "Class Average by Subject - Class $classId", "Subjects", "Average Grade");
+            
+            return json_encode([
+                'success' => true,
+                'chartType' => 'class_average',
+                'imageData' => $base64Image,
+                'classId' => $classId,
+                'subjects' => count($classAverageData)
+            ]);
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating class average chart: " . $e->getMessage());
+        }
+    }
+    
+    // Chart data generation methods (simulating database queries)
+    private function getGradesTrendData($studentId) {
+        // Simulate grade trend data - in real implementation, this would query the database
+        return [
+            'Week 1' => 75 + ($studentId % 10),
+            'Week 2' => 78 + ($studentId % 8),
+            'Week 3' => 82 + ($studentId % 6),
+            'Week 4' => 85 + ($studentId % 5),
+            'Week 5' => 88 + ($studentId % 4),
+            'Week 6' => 90 + ($studentId % 3),
+            'Week 7' => 87 + ($studentId % 4),
+            'Week 8' => 91 + ($studentId % 3)
+        ];
+    }
+    
+    private function getSubjectComparisonData($studentId) {
+        // Simulate subject performance data
+        $baseGrade = 80 + ($studentId % 10);
+        return [
+            'Mathematics' => $baseGrade + rand(-5, 10),
+            'Physics' => $baseGrade + rand(-8, 8),
+            'Chemistry' => $baseGrade + rand(-6, 12),
+            'Biology' => $baseGrade + rand(-4, 6),
+            'Literature' => $baseGrade + rand(-10, 5)
+        ];
+    }
+    
+    private function getGPAProgressData($studentId) {
+        // Simulate GPA progress over terms
+        $baseGPA = 3.0 + ($studentId % 10) * 0.05;
+        return [
+            'Fall 2022' => round($baseGPA + 0.1, 2),
+            'Spring 2023' => round($baseGPA + 0.2, 2),
+            'Summer 2023' => round($baseGPA + 0.15, 2),
+            'Fall 2023' => round($baseGPA + 0.3, 2),
+            'Spring 2024' => round($baseGPA + 0.4, 2)
+        ];
+    }
+    
+    private function getPerformanceDistributionData($classId) {
+        // Simulate grade distribution for a class
+        $totalStudents = 25 + ($classId % 15);
+        return [
+            'A (90-100)' => floor($totalStudents * 0.2),
+            'B (80-89)' => floor($totalStudents * 0.35),
+            'C (70-79)' => floor($totalStudents * 0.25),
+            'D (60-69)' => floor($totalStudents * 0.15),
+            'F (0-59)' => floor($totalStudents * 0.05)
+        ];
+    }
+    
+    private function getClassAverageData($classId) {
+        // Simulate class averages by subject
+        $baseAverage = 75 + ($classId % 15);
+        return [
+            'Mathematics' => $baseAverage + rand(0, 10),
+            'Physics' => $baseAverage + rand(-5, 8),
+            'Chemistry' => $baseAverage + rand(-3, 12),
+            'Biology' => $baseAverage + rand(2, 8),
+            'Literature' => $baseAverage + rand(-2, 6),
+            'History' => $baseAverage + rand(1, 9)
+        ];
+    }
+    
+    private function createErrorResponse($message) {
+        return json_encode([
+            'success' => false,
+            'error' => $message,
+            'chartType' => 'error'
         ]);
     }
     
