@@ -302,7 +302,7 @@ class StudentAnalyticsService {
     private function analyzePerformanceTrend($historical, $current) {
         if (empty($historical)) return "No historical data available";
         
-        $allGrades = array_merge(...$historical, $current);
+        $allGrades = array_merge($historical[0] ?? [], $current);
         $trends = [];
         
         for ($i = 1; $i < count($allGrades); $i++) {
