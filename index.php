@@ -398,7 +398,7 @@
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $client = new SoapClient(null, array(
-                    'location' => 'http://localhost:8000/soap_server.php',
+                    'location' => 'http://localhost:8000/student_analytics/soap_server.php',
                     'uri' => 'http://localhost:8000/student_analytics',
                     'trace' => 1
                 ));
