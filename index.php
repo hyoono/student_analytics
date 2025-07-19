@@ -19,14 +19,14 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center mb-5">Student Performance Analytics - SOAP Client</h1>
+        <h1 class="text-center mb-5">Student Performance Analytics - Mapua MCL SOAP Service</h1>
         
         <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="pills-grade-tab" data-bs-toggle="pill" data-bs-target="#pills-grade" type="button" role="tab">Grade Analysis</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-comparison-tab" data-bs-toggle="pill" data-bs-target="#pills-comparison" type="button" role="tab">Subject Comparison</button>
+                <button class="nav-link" id="pills-comparison-tab" data-bs-toggle="pill" data-bs-target="#pills-comparison" type="button" role="tab">Course Comparison</button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-prediction-tab" data-bs-toggle="pill" data-bs-target="#pills-prediction" type="button" role="tab">Predictive Modeling</button>
@@ -44,7 +44,7 @@
             <div class="tab-pane fade show active" id="pills-grade" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
-                        <h4>Grade Analysis</h4>
+                        <h4>Grade Analysis - Mapua MCL System</h4>
                     </div>
                     <div class="card-body">
                         <form method="POST" action="">
@@ -59,21 +59,36 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">Current Grades (comma-separated)</label>
-                                        <input type="text" class="form-control" name="current_grades" placeholder="85,92,78,88" required>
+                                        <input type="text" class="form-control" name="current_grades" placeholder="1.25,1.50,2.00,1.75 or 90,85,92,88" required>
+                                        <small class="form-text text-muted">Use transmuted grades (1.00-5.00) or raw grades (0-100)</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Subject Weights (comma-separated)</label>
-                                        <input type="text" class="form-control" name="subject_weights" placeholder="0.3,0.25,0.25,0.2" required>
+                                        <label class="form-label">Course Units (comma-separated)</label>
+                                        <input type="text" class="form-control" name="course_units" placeholder="3,4,3,3" required>
+                                        <small class="form-text text-muted">Credit units for each course</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">Historical Grades (semicolon-separated terms)</label>
-                                        <input type="text" class="form-control" name="historical_grades" placeholder="80,85,75,82;83,88,77,85" required>
+                                        <input type="text" class="form-control" name="historical_grades" placeholder="1.50,1.75,2.00,1.25;1.25,1.50,2.25,1.75" required>
+                                        <small class="form-text text-muted">Previous term grades separated by semicolons</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Grade Format</label>
+                                        <select class="form-control" name="grade_format">
+                                            <option value="auto">Auto-detect</option>
+                                            <option value="transmuted">Transmuted (1.00-5.00)</option>
+                                            <option value="raw">Raw (0-100)</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -83,15 +98,15 @@
                 </div>
             </div>
             
-            <!-- Subject Comparison Tab -->
+            <!-- Course Comparison Tab -->
             <div class="tab-pane fade" id="pills-comparison" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
-                        <h4>Subject Performance Comparison</h4>
+                        <h4>Course Performance Comparison</h4>
                     </div>
                     <div class="card-body">
                         <form method="POST" action="">
-                            <input type="hidden" name="action" value="subject_comparison">
+                            <input type="hidden" name="action" value="course_comparison">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
@@ -101,28 +116,31 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Subject Names (comma-separated)</label>
-                                        <input type="text" class="form-control" name="subject_names" placeholder="Math,Physics,Chemistry,Biology" required>
+                                        <label class="form-label">Course Names (comma-separated)</label>
+                                        <input type="text" class="form-control" name="course_names" placeholder="Math,Physics,Chemistry,Biology" required>
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label">Subject Grades</label>
-                                        <input type="text" class="form-control" name="subject_grades" placeholder="85,92,78,88" required>
+                                        <label class="form-label">Student Grades</label>
+                                        <input type="text" class="form-control" name="student_grades" placeholder="1.25,1.50,2.00,1.75" required>
+                                        <small class="form-text text-muted">Transmuted or raw grades</small>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">Class Averages</label>
-                                        <input type="text" class="form-control" name="class_averages" placeholder="82,89,75,85" required>
+                                        <input type="text" class="form-control" name="class_averages" placeholder="1.75,2.00,2.25,1.50" required>
+                                        <small class="form-text text-muted">Same format as student grades</small>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label">Credit Hours</label>
-                                        <input type="text" class="form-control" name="credit_hours" placeholder="3,4,3,3" required>
+                                        <label class="form-label">Credit Units</label>
+                                        <input type="text" class="form-control" name="credit_units" placeholder="3,4,3,3" required>
+                                        <small class="form-text text-muted">Course credit units</small>
                                     </div>
                                 </div>
                             </div>
@@ -151,33 +169,42 @@
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">Historical Grades</label>
-                                        <input type="text" class="form-control" name="historical_grades" placeholder="85,87,82,89,91" required>
+                                        <input type="text" class="form-control" name="historical_grades" placeholder="1.50,1.75,2.00,1.25,1.50" required>
+                                        <small class="form-text text-muted">Previous grades (transmuted or raw)</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">Attendance Rate (%)</label>
                                         <input type="number" step="0.1" class="form-control" name="attendance_rate" placeholder="95.5" required>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label">Participation Score (1-10)</label>
-                                        <input type="number" step="0.1" class="form-control" name="participation_score" placeholder="8.5" required>
+                                        <label class="form-label">Course Hours/Week</label>
+                                        <input type="number" step="0.5" class="form-control" name="course_hours" placeholder="40" required>
+                                        <small class="form-text text-muted">Total lecture + lab hours</small>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label class="form-label">Study Hours/Week</label>
-                                        <input type="number" class="form-control" name="study_hours" placeholder="25" required>
+                                        <label class="form-label">Credit Units</label>
+                                        <input type="number" step="0.5" class="form-control" name="credit_units" placeholder="18" required>
+                                        <small class="form-text text-muted">Current semester units</small>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Extracurricular Hours/Week</label>
-                                        <input type="number" class="form-control" name="extracurricular_hours" placeholder="5" required>
+                                        <label class="form-label">Grade Format</label>
+                                        <select class="form-control" name="grade_format">
+                                            <option value="auto">Auto-detect</option>
+                                            <option value="transmuted">Transmuted (1.00-5.00)</option>
+                                            <option value="raw">Raw (0-100)</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -191,7 +218,7 @@
             <div class="tab-pane fade" id="pills-scholarship" role="tabpanel">
                 <div class="card">
                     <div class="card-header">
-                        <h4>Scholarship Eligibility</h4>
+                        <h4>Scholarship Eligibility - Mapua MCL System</h4>
                     </div>
                     <div class="card-body">
                         <form method="POST" action="">
@@ -205,46 +232,25 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">GPA (0.0-4.0)</label>
-                                        <input type="number" step="0.01" class="form-control" name="gpa" placeholder="3.75" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label">Income Level</label>
-                                        <select class="form-control" name="income_level" required>
-                                            <option value="Low">Low</option>
-                                            <option value="Middle" selected>Middle</option>
-                                            <option value="High">High</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label">Community Service Hours</label>
-                                        <input type="number" class="form-control" name="community_service_hours" placeholder="120" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label">Extracurriculars</label>
-                                        <input type="text" class="form-control" name="extracurriculars" placeholder="Basketball,Debate,Student Council">
+                                        <label class="form-label">TWA (Term Weighted Average)</label>
+                                        <input type="number" step="0.01" class="form-control" name="twa" placeholder="1.75" min="1.00" max="5.00" required>
+                                        <small class="form-text text-muted">Range: 1.00-5.00 (1.00 = highest)</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Honors and Awards</label>
-                                        <input type="text" class="form-control" name="honors" placeholder="Dean's List,Academic Excellence">
+                                        <label class="form-label">Current Credit Units</label>
+                                        <input type="number" step="0.5" class="form-control" name="credit_units" placeholder="18" required>
+                                        <small class="form-text text-muted">Current semester units</small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label class="form-label">Leadership Positions</label>
-                                        <input type="text" class="form-control" name="leadership_positions" placeholder="Class President,Team Captain">
+                                        <label class="form-label">Completed Units</label>
+                                        <input type="number" step="0.5" class="form-control" name="completed_units" placeholder="75" required>
+                                        <small class="form-text text-muted">Total units completed</small>
                                     </div>
                                 </div>
                             </div>
@@ -288,7 +294,7 @@
                                 </form>
                                 
                                 <form method="POST" action="" class="mb-3">
-                                    <input type="hidden" name="action" value="subject_comparison_chart">
+                                    <input type="hidden" name="action" value="course_comparison_chart">
                                     <div class="mb-3">
                                         <label class="form-label">Student ID</label>
                                         <input type="text" class="form-control" name="student_id" required>
@@ -307,11 +313,11 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-success btn-sm">Generate Subject Comparison Chart</button>
+                                    <button type="submit" class="btn btn-success btn-sm">Generate Course Comparison Chart</button>
                                 </form>
                                 
                                 <form method="POST" action="" class="mb-3">
-                                    <input type="hidden" name="action" value="gpa_progress_chart">
+                                    <input type="hidden" name="action" value="twa_progress_chart">
                                     <div class="mb-3">
                                         <label class="form-label">Student ID</label>
                                         <input type="text" class="form-control" name="student_id" required>
@@ -330,7 +336,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-warning btn-sm">Generate GPA Progress Chart</button>
+                                    <button type="submit" class="btn btn-warning btn-sm">Generate TWA Progress Chart</button>
                                 </form>
                             </div>
                             
@@ -392,8 +398,8 @@
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $client = new SoapClient(null, array(
-                    'location' => 'http://localhost/student_analytics/soap_server.php',
-                    'uri' => 'http://localhost/student_analytics',
+                    'location' => 'http://localhost:8000/soap_server.php',
+                    'uri' => 'http://localhost:8000/student_analytics',
                     'trace' => 1
                 ));
                 
@@ -405,18 +411,19 @@
                         $result = $client->analyzeGrades(
                             $_POST['student_id'],
                             $_POST['current_grades'],
-                            $_POST['subject_weights'],
-                            $_POST['historical_grades']
+                            $_POST['course_units'],
+                            $_POST['historical_grades'],
+                            $_POST['grade_format'] ?? 'auto'
                         );
                         break;
                         
-                    case 'subject_comparison':
-                        $result = $client->compareSubjects(
+                    case 'course_comparison':
+                        $result = $client->compareCourses(
                             $_POST['student_id'],
-                            $_POST['subject_names'],
-                            $_POST['subject_grades'],
+                            $_POST['course_names'],
+                            $_POST['student_grades'],
                             $_POST['class_averages'],
-                            $_POST['credit_hours']
+                            $_POST['credit_units']
                         );
                         break;
                         
@@ -425,21 +432,18 @@
                             $_POST['student_id'],
                             $_POST['historical_grades'],
                             $_POST['attendance_rate'],
-                            $_POST['participation_score'],
-                            $_POST['study_hours'],
-                            $_POST['extracurricular_hours']
+                            $_POST['course_hours'],
+                            $_POST['credit_units'],
+                            $_POST['grade_format'] ?? 'auto'
                         );
                         break;
                         
                     case 'scholarship_eligibility':
-                        $result = $client->checkEligibility(
+                        $result = $client->checkScholarshipEligibility(
                             $_POST['student_id'],
-                            $_POST['gpa'],
-                            $_POST['extracurriculars'],
-                            $_POST['income_level'],
-                            $_POST['honors'],
-                            $_POST['community_service_hours'],
-                            $_POST['leadership_positions']
+                            $_POST['twa'],
+                            $_POST['credit_units'],
+                            $_POST['completed_units']
                         );
                         break;
                         
@@ -451,7 +455,7 @@
                         );
                         break;
                         
-                    case 'subject_comparison_chart':
+                    case 'course_comparison_chart':
                         $result = $client->generateSubjectComparisonChart(
                             $_POST['student_id'],
                             $_POST['width'],
@@ -459,7 +463,7 @@
                         );
                         break;
                         
-                    case 'gpa_progress_chart':
+                    case 'twa_progress_chart':
                         $result = $client->generateGPAProgressChart(
                             $_POST['student_id'],
                             $_POST['width'],
