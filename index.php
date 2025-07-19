@@ -432,8 +432,8 @@
                             $_POST['student_id'],
                             $_POST['historical_grades'],
                             $_POST['attendance_rate'],
-                            $_POST['course_hours'],
-                            $_POST['credit_units'],
+                            $_POST['course_hours'] ?? '0',
+                            $_POST['credit_units'] ?? '0',
                             $_POST['grade_format'] ?? 'auto'
                         );
                         break;
