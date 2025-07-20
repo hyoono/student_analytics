@@ -178,13 +178,13 @@
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">Attendance Rate (%)</label>
-                                        <input type="number" step="0.1" class="form-control" name="attendance_rate" placeholder="95.5" required>
+                                        <input type="number" step="0.01" class="form-control" name="attendance_rate" placeholder="95.50" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
                                         <label class="form-label">Course Hours/Week</label>
-                                        <input type="number" step="0.5" class="form-control" name="course_hours" placeholder="40" required>
+                                        <input type="number" step="0.01" class="form-control" name="course_hours" placeholder="40.00" required>
                                         <small class="form-text text-muted">Total lecture + lab hours</small>
                                     </div>
                                 </div>
