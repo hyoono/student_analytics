@@ -398,13 +398,16 @@
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $client = new SoapClient(null, array(
-                    'location' => 'http://localhost/student_analytics/soap_server.php',
+                    'location' => 'http://localhost:8080/soap_server.php',
                     'uri' => 'http://localhost/student_analytics',
-                    'trace' => 1
+                    'trace' => 1,
+                    'connection_timeout' => 60,
+                    'cache_wsdl' => WSDL_CACHE_NONE
                 ));
                 
                 $action = $_POST['action'];
                 $result = null;
+                $chartData = null;
                 
                 switch ($action) {
                     case 'grade_analysis':
@@ -415,6 +418,20 @@
                             $_POST['historical_grades'],
                             $_POST['grade_format'] ?? 'auto'
                         );
+                        
+                        // Auto-generate grades trend chart
+                        try {
+                            $chartResult = $client->generateGradesTrendChart(
+                                $_POST['student_id'],
+                                600, // Smaller width for inline display
+                                400  // Smaller height for inline display
+                            );
+                            $chartData = json_decode($chartResult, true);
+                        } catch (Exception $chartError) {
+                            // Chart generation failed, continue with analysis results only
+                            error_log("Chart generation failed for grade analysis: " . $chartError->getMessage());
+                            $chartData = ['success' => false, 'error' => 'Chart generation failed: ' . $chartError->getMessage()];
+                        }
                         break;
                         
                     case 'course_comparison':
@@ -425,6 +442,20 @@
                             $_POST['class_averages'],
                             $_POST['credit_units']
                         );
+                        
+                        // Auto-generate course comparison chart
+                        try {
+                            $chartResult = $client->generateSubjectComparisonChart(
+                                $_POST['student_id'],
+                                600, // Smaller width for inline display
+                                400  // Smaller height for inline display
+                            );
+                            $chartData = json_decode($chartResult, true);
+                        } catch (Exception $chartError) {
+                            // Chart generation failed, continue with analysis results only
+                            error_log("Chart generation failed for course comparison: " . $chartError->getMessage());
+                            $chartData = ['success' => false, 'error' => 'Chart generation failed: ' . $chartError->getMessage()];
+                        }
                         break;
                         
                     case 'predictive_modeling':
@@ -436,6 +467,20 @@
                             $_POST['credit_units'] ?? '0',
                             $_POST['grade_format'] ?? 'auto'
                         );
+                        
+                        // Auto-generate grades trend chart for predictive visualization
+                        try {
+                            $chartResult = $client->generateGradesTrendChart(
+                                $_POST['student_id'],
+                                600, // Smaller width for inline display
+                                400  // Smaller height for inline display
+                            );
+                            $chartData = json_decode($chartResult, true);
+                        } catch (Exception $chartError) {
+                            // Chart generation failed, continue with analysis results only
+                            error_log("Chart generation failed for predictive modeling: " . $chartError->getMessage());
+                            $chartData = ['success' => false, 'error' => 'Chart generation failed: ' . $chartError->getMessage()];
+                        }
                         break;
                         
                     case 'scholarship_eligibility':
@@ -445,6 +490,20 @@
                             $_POST['credit_units'],
                             $_POST['completed_units']
                         );
+                        
+                        // Auto-generate TWA progress chart
+                        try {
+                            $chartResult = $client->generateGPAProgressChart(
+                                $_POST['student_id'],
+                                600, // Smaller width for inline display
+                                400  // Smaller height for inline display
+                            );
+                            $chartData = json_decode($chartResult, true);
+                        } catch (Exception $chartError) {
+                            // Chart generation failed, continue with analysis results only
+                            error_log("Chart generation failed for scholarship eligibility: " . $chartError->getMessage());
+                            $chartData = ['success' => false, 'error' => 'Chart generation failed: ' . $chartError->getMessage()];
+                        }
                         break;
                         
                     case 'grades_trend_chart':
@@ -493,7 +552,7 @@
                     echo '<div class="result-card">';
                     echo '<h5>Results for ' . ucfirst(str_replace('_', ' ', $action)) . '</h5>';
                     
-                    // Check if this is a chart result
+                    // Check if this is a standalone chart result (from Visual Analytics tab)
                     if (isset($data['chartType']) && isset($data['imageData'])) {
                         if ($data['success']) {
                             echo '<div class="text-center">';
@@ -515,7 +574,7 @@
                             echo '</div>';
                         }
                     } else {
-                        // Regular non-chart result
+                        // Regular analysis result - display analysis data first
                         echo '<div class="row">';
                         foreach ($data as $key => $value) {
                             $label = ucwords(str_replace('_', ' ', $key));
@@ -524,6 +583,22 @@
                             echo '</div>';
                         }
                         echo '</div>';
+                        
+                        // Display integrated chart if available
+                        if ($chartData) {
+                            echo '<div class="mt-4">';
+                            echo '<h6>Visual Analysis</h6>';
+                            if ($chartData['success']) {
+                                echo '<div class="text-center">';
+                                echo '<img src="data:image/png;base64,' . $chartData['imageData'] . '" class="img-fluid border" alt="Generated Chart" style="max-width: 100%; height: auto;">';
+                                echo '</div>';
+                            } else {
+                                echo '<div class="alert alert-warning">';
+                                echo '<strong>Chart Generation Warning:</strong> ' . $chartData['error'];
+                                echo '</div>';
+                            }
+                            echo '</div>';
+                        }
                     }
                     echo '</div>';
                 }
