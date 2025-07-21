@@ -413,7 +413,7 @@
             try {
                 // First try to get the analysis results
                 $client = new SoapClient(null, array(
-                    'location' => 'http://localhost:8080/soap_server.php',
+                    'location' => 'http://localhost/student_analytics/soap_server.php',
                     'uri' => 'http://localhost/student_analytics',
                     'trace' => 1,
                     'connection_timeout' => 30
