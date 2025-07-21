@@ -251,13 +251,25 @@ class ChartGenerator {
         
         // Find max value for scaling from both datasets
         $allValues = array_merge(array_values($studentData), array_values($classAverageData));
-        $maxValue = max($allValues);
-        $minValue = min($allValues);
+        $dataMaxValue = max($allValues);
+        $dataMinValue = min($allValues);
         
         // For transmuted grades (1.00-5.00), we should invert the scale since 1.00 is best
-        $isTransmutedGrades = $maxValue <= 5.00 && $minValue >= 1.00;
+        $isTransmutedGrades = $dataMaxValue <= 5.00 && $dataMinValue >= 1.00;
         
-        if ($maxValue == $minValue) $maxValue = $minValue + 1;
+        // Use appropriate Y-axis range for better visual representation
+        if ($isTransmutedGrades) {
+            // For transmuted grades, use a broader range to show absolute positions
+            $minValue = 1.0;
+            $maxValue = min(5.0, $dataMaxValue + 0.5); // Cap at 5.0 but add some padding
+        } else {
+            // For other data, expand range by 20% on each side for better visual context
+            $dataRange = $dataMaxValue - $dataMinValue;
+            if ($dataRange == 0) $dataRange = 1;
+            $padding = $dataRange * 0.2;
+            $minValue = max(0, $dataMinValue - $padding);
+            $maxValue = $dataMaxValue + $padding;
+        }
         
         // Draw grid lines
         $this->drawGrid($margin, $chartWidth, $chartHeight, $minValue, $maxValue);
