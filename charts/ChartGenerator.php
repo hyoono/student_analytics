@@ -118,13 +118,17 @@ class ChartGenerator {
             return $this->getBase64Image();
         }
         
-        // Find max value for scaling
+        // Find min and max values for proper scaling
         $values = array_values($data);
         $maxValue = max($values);
+        $minValue = min($values);
+        
+        // Handle edge cases
+        if ($maxValue == $minValue) $maxValue = $minValue + 1;
         if ($maxValue == 0) $maxValue = 1;
         
         // Draw grid lines
-        $this->drawGrid($margin, $chartWidth, $chartHeight, 0, $maxValue);
+        $this->drawGrid($margin, $chartWidth, $chartHeight, $minValue, $maxValue);
         
         // Draw axes labels
         imagestring($this->image, 3, 20, $this->height / 2, $yLabel, $this->colors['black']);
@@ -138,7 +142,7 @@ class ChartGenerator {
         $colors = [$this->colors['blue'], $this->colors['green'], $this->colors['orange'], $this->colors['purple'], $this->colors['red']];
         
         for ($i = 0; $i < count($data); $i++) {
-            $barHeight = ($values[$i] / $maxValue) * $chartHeight;
+            $barHeight = (($values[$i] - $minValue) / ($maxValue - $minValue)) * $chartHeight;
             $x1 = $margin + $i * ($barWidth + $barSpacing) + $barSpacing/2;
             $y1 = $margin + $chartHeight;
             $x2 = $x1 + $barWidth;
