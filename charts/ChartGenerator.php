@@ -216,6 +216,125 @@ class ChartGenerator {
         return $this->getBase64Image();
     }
 
+    public function generateDoubleBarChart($studentData, $classAverageData, $title, $xLabel, $yLabel) {
+        // Fill background
+        imagefill($this->image, 0, 0, $this->colors['white']);
+        
+        // Chart area dimensions
+        $margin = 100;
+        $chartWidth = $this->width - 2 * $margin;
+        $chartHeight = $this->height - 2 * $margin;
+        
+        // Draw title
+        $titleFont = 5;
+        $titleWidth = strlen($title) * imagefontwidth($titleFont);
+        imagestring($this->image, $titleFont, ($this->width - $titleWidth) / 2, 20, $title, $this->colors['black']);
+        
+        // Draw chart border
+        imagerectangle($this->image, $margin, $margin, $this->width - $margin, $this->height - $margin, $this->colors['black']);
+        
+        if (empty($studentData) || empty($classAverageData)) {
+            $this->drawErrorMessage("No data available for comparison");
+            return $this->getBase64Image();
+        }
+        
+        // Ensure both datasets have the same keys
+        $keys = array_intersect(array_keys($studentData), array_keys($classAverageData));
+        if (empty($keys)) {
+            $this->drawErrorMessage("Student and class data do not match");
+            return $this->getBase64Image();
+        }
+        
+        // Find max value for scaling from both datasets
+        $allValues = array_merge(array_values($studentData), array_values($classAverageData));
+        $maxValue = max($allValues);
+        $minValue = min($allValues);
+        
+        // For transmuted grades (1.00-5.00), we should invert the scale since 1.00 is best
+        $isTransmutedGrades = $maxValue <= 5.00 && $minValue >= 1.00;
+        
+        if ($maxValue == $minValue) $maxValue = $minValue + 1;
+        
+        // Draw grid lines
+        $this->drawGrid($margin, $chartWidth, $chartHeight, $minValue, $maxValue);
+        
+        // Draw axes labels
+        imagestring($this->image, 3, 20, $this->height / 2, $yLabel, $this->colors['black']);
+        $xLabelWidth = strlen($xLabel) * imagefontwidth(3);
+        imagestring($this->image, 3, ($this->width - $xLabelWidth) / 2, $this->height - 30, $xLabel, $this->colors['black']);
+        
+        // Calculate bar dimensions
+        $numCourses = count($keys);
+        $groupWidth = $chartWidth / $numCourses;
+        $barWidth = $groupWidth * 0.35; // Each bar takes 35% of group width
+        $barSpacing = $groupWidth * 0.15; // 15% spacing between bars in a group
+        
+        // Colors for student vs class average
+        $studentColor = $this->colors['blue'];
+        $classColor = $this->colors['orange'];
+        
+        // Draw bars for each course
+        $i = 0;
+        foreach ($keys as $course) {
+            $studentGrade = $studentData[$course];
+            $classAverage = $classAverageData[$course];
+            
+            // Calculate bar heights
+            $studentBarHeight = (($studentGrade - $minValue) / ($maxValue - $minValue)) * $chartHeight;
+            $classBarHeight = (($classAverage - $minValue) / ($maxValue - $minValue)) * $chartHeight;
+            
+            // Calculate x positions
+            $groupStartX = $margin + $i * $groupWidth;
+            $studentBarX = $groupStartX + $barSpacing;
+            $classBarX = $studentBarX + $barWidth + $barSpacing;
+            
+            // Y positions
+            $baseY = $margin + $chartHeight;
+            $studentBarY = $baseY - $studentBarHeight;
+            $classBarY = $baseY - $classBarHeight;
+            
+            // Draw student grade bar
+            imagefilledrectangle($this->image, $studentBarX, $studentBarY, $studentBarX + $barWidth, $baseY, $studentColor);
+            imagerectangle($this->image, $studentBarX, $studentBarY, $studentBarX + $barWidth, $baseY, $this->colors['black']);
+            
+            // Draw class average bar
+            imagefilledrectangle($this->image, $classBarX, $classBarY, $classBarX + $barWidth, $baseY, $classColor);
+            imagerectangle($this->image, $classBarX, $classBarY, $classBarX + $barWidth, $baseY, $this->colors['black']);
+            
+            // Draw value labels on bars
+            imagestring($this->image, 2, $studentBarX + $barWidth/2 - 15, $studentBarY - 20, round($studentGrade, 2), $this->colors['black']);
+            imagestring($this->image, 2, $classBarX + $barWidth/2 - 15, $classBarY - 20, round($classAverage, 2), $this->colors['black']);
+            
+            // Draw course name (x-axis label)
+            $courseWidth = strlen($course) * imagefontwidth(2);
+            $labelX = $groupStartX + $groupWidth/2 - $courseWidth/2;
+            imagestring($this->image, 2, $labelX, $this->height - $margin + 10, $course, $this->colors['black']);
+            
+            $i++;
+        }
+        
+        // Draw legend
+        $legendY = 60;
+        $legendX = $this->width - 200;
+        
+        // Student grade legend
+        imagefilledrectangle($this->image, $legendX, $legendY, $legendX + 15, $legendY + 15, $studentColor);
+        imagerectangle($this->image, $legendX, $legendY, $legendX + 15, $legendY + 15, $this->colors['black']);
+        imagestring($this->image, 3, $legendX + 20, $legendY, "Student Grade", $this->colors['black']);
+        
+        // Class average legend
+        imagefilledrectangle($this->image, $legendX, $legendY + 25, $legendX + 15, $legendY + 40, $classColor);
+        imagerectangle($this->image, $legendX, $legendY + 25, $legendX + 15, $legendY + 40, $this->colors['black']);
+        imagestring($this->image, 3, $legendX + 20, $legendY + 25, "Class Average", $this->colors['black']);
+        
+        // Add note for transmuted grades
+        if ($isTransmutedGrades) {
+            imagestring($this->image, 2, $legendX - 100, $legendY + 50, "Note: Lower values = Better grades", $this->colors['dark_gray']);
+        }
+        
+        return $this->getBase64Image();
+    }
+
     private function drawGrid($margin, $chartWidth, $chartHeight, $minValue, $maxValue) {
         // Draw horizontal grid lines
         $gridLines = 5;

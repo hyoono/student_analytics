@@ -296,17 +296,31 @@
                                 <form method="POST" action="" class="mb-3">
                                     <input type="hidden" name="action" value="course_comparison_chart">
                                     <div class="mb-3">
-                                        <label class="form-label">Student ID</label>
-                                        <input type="text" class="form-control" name="student_id" required>
+                                        <label class="form-label">Course Names (comma-separated)</label>
+                                        <input type="text" class="form-control" name="course_names" placeholder="Math,Physics,Chemistry" required>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Student Grades</label>
+                                                <input type="text" class="form-control" name="student_grades" placeholder="1.25,1.50,2.00" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Class Averages</label>
+                                                <input type="text" class="form-control" name="class_averages" placeholder="1.75,2.00,2.25" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label class="form-label">Width</label>
                                                 <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="mb-3">
                                                 <label class="form-label">Height</label>
                                                 <input type="number" class="form-control" name="height" value="600" min="300" max="800">
@@ -419,10 +433,14 @@
                             $_POST['grade_format'] ?? 'auto'
                         );
                         
-                        // Try to generate chart (simplified approach)
+                        // Generate integrated chart with analysis
                         try {
-                            $chartResult = $client->generateGradesTrendChart(
+                            $chartResult = $client->generateGradeAnalysisWithChart(
                                 $_POST['student_id'],
+                                $_POST['current_grades'],
+                                $_POST['course_units'],
+                                $_POST['historical_grades'],
+                                $_POST['grade_format'] ?? 'auto',
                                 600,
                                 400
                             );
@@ -442,10 +460,14 @@
                             $_POST['credit_units']
                         );
                         
-                        // Try to generate chart
+                        // Generate integrated chart with analysis
                         try {
-                            $chartResult = $client->generateSubjectComparisonChart(
+                            $chartResult = $client->generateCourseComparisonWithAnalysis(
                                 $_POST['student_id'],
+                                $_POST['course_names'],
+                                $_POST['student_grades'],
+                                $_POST['class_averages'],
+                                $_POST['credit_units'],
                                 600,
                                 400
                             );
@@ -509,7 +531,9 @@
                         
                     case 'course_comparison_chart':
                         $result = $client->generateSubjectComparisonChart(
-                            $_POST['student_id'],
+                            $_POST['course_names'],
+                            $_POST['student_grades'],
+                            $_POST['class_averages'],
                             $_POST['width'],
                             $_POST['height']
                         );
