@@ -595,6 +595,54 @@ class StudentAnalyticsService {
         }
     }
     
+    /**
+     * Generate Predictive Modeling with Chart Integration
+     * This method combines predictive analysis with trend chart generation using real user data
+     */
+    public function generatePredictionWithChart($studentId, $historicalGrades, $attendanceRate, $courseHours, $creditUnits, $gradeFormat = 'auto', $width = 800, $height = 600) {
+        try {
+            // First perform the predictive analysis
+            $predictionResult = $this->generatePrediction($studentId, $historicalGrades, $attendanceRate, $courseHours, $creditUnits, $gradeFormat);
+            $predictionData = json_decode($predictionResult, true);
+            
+            // Create trend data from historical grades for chart
+            $grades = array_map('floatval', explode(',', $historicalGrades));
+            $trendData = [];
+            
+            // Create time series data from historical grades
+            for ($i = 0; $i < count($grades); $i++) {
+                $periodLabel = "Period " . ($i + 1);
+                $trendData[$periodLabel] = $grades[$i];
+            }
+            
+            // Add predicted grade as the next point
+            $nextPeriod = "Predicted";
+            $trendData[$nextPeriod] = $predictionData['predictedGrade'];
+            
+            // Generate the trend chart
+            $chartTitle = "Grade Prediction - Student $studentId Performance Trend & Forecast";
+            $chartResult = $this->generateGradesTrendChart($trendData, $chartTitle, $width, $height);
+            $chartData = json_decode($chartResult, true);
+            
+            if (!$chartData['success']) {
+                return $chartResult; // Return chart error
+            }
+            
+            // Combine prediction results with chart
+            return json_encode([
+                'success' => true,
+                'chartType' => 'prediction_with_chart',
+                'imageData' => $chartData['imageData'],
+                'prediction' => $predictionData,
+                'studentId' => $studentId,
+                'dataPoints' => $chartData['dataPoints']
+            ]);
+            
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating prediction with chart: " . $e->getMessage());
+        }
+    }
+    
     // Chart data generation methods (simulating database queries)
     private function getGradesTrendData($studentId) {
         // Simulate grade trend data - in real implementation, this would query the database

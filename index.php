@@ -478,26 +478,17 @@
                         break;
                         
                     case 'predictive_modeling':
-                        $result = $client->generatePrediction(
+                        // Use integrated prediction with chart method
+                        $result = $client->generatePredictionWithChart(
                             $_POST['student_id'],
                             $_POST['historical_grades'],
                             $_POST['attendance_rate'],
                             $_POST['course_hours'] ?? '0',
                             $_POST['credit_units'] ?? '0',
-                            $_POST['grade_format'] ?? 'auto'
+                            $_POST['grade_format'] ?? 'auto',
+                            600,
+                            400
                         );
-                        
-                        // Try to generate chart
-                        try {
-                            $chartResult = $client->generateGradesTrendChart(
-                                $_POST['student_id'],
-                                600,
-                                400
-                            );
-                            $chartData = json_decode($chartResult, true);
-                        } catch (Exception $chartError) {
-                            error_log("Chart generation failed: " . $chartError->getMessage());
-                        }
                         break;
                         
                     case 'scholarship_eligibility':
@@ -570,7 +561,7 @@
                     echo '<h5>Results for ' . ucfirst(str_replace('_', ' ', $action)) . '</h5>';
                     
                     // Check if this is a standalone chart result (from Visual Analytics tab)
-                    if (isset($data['chartType']) && isset($data['imageData'])) {
+                    if (isset($data['chartType']) && isset($data['imageData']) && !isset($data['prediction']) && !isset($data['analysis'])) {
                         if ($data['success']) {
                             echo '<div class="text-center">';
                             echo '<img src="data:image/png;base64,' . $data['imageData'] . '" class="img-fluid border" alt="Generated Chart" style="max-width: 100%; height: auto;">';
@@ -584,6 +575,35 @@
                                     echo '</div>';
                                 }
                             }
+                            echo '</div>';
+                        } else {
+                            echo '<div class="alert alert-danger">';
+                            echo '<strong>Chart Generation Failed:</strong> ' . $data['error'];
+                            echo '</div>';
+                        }
+                    } else if (isset($data['chartType']) && isset($data['imageData']) && (isset($data['prediction']) || isset($data['analysis']))) {
+                        // This is an integrated chart result (prediction_with_chart, grade_analysis_with_chart, etc.)
+                        if ($data['success']) {
+                            // Display the analysis data first
+                            $analysisData = isset($data['prediction']) ? $data['prediction'] : $data['analysis'];
+                            echo '<div class="row">';
+                            foreach ($analysisData as $key => $value) {
+                                if (!is_array($value)) {
+                                    $label = ucwords(str_replace('_', ' ', $key));
+                                    echo '<div class="col-md-6 mb-2">';
+                                    echo "<strong>$label:</strong> $value";
+                                    echo '</div>';
+                                }
+                            }
+                            echo '</div>';
+                            
+                            // Display the integrated chart
+                            echo '<div class="mt-4">';
+                            echo '<h6>📊 Visual Analysis</h6>';
+                            echo '<div class="text-center">';
+                            echo '<img src="data:image/png;base64,' . $data['imageData'] . '" class="img-fluid border" alt="Generated Chart" style="max-width: 100%; height: auto;">';
+                            echo '</div>';
+                            echo '<p class="text-center mt-2"><small class="text-muted">Integrated chart for ' . ucfirst(str_replace('_', ' ', $action)) . '</small></p>';
                             echo '</div>';
                         } else {
                             echo '<div class="alert alert-danger">';
