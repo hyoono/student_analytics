@@ -10,8 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// Include chart generation class - DISABLED
-// require_once 'charts/ChartGenerator.php';
+// Include chart generation class
+require_once 'charts/ChartGenerator.php';
 
 class StudentAnalyticsService {
     
@@ -306,19 +306,96 @@ class StudentAnalyticsService {
     }
     
     /**
-     * Generate Grades Trend Chart - DISABLED
-     * Chart functionality has been removed from the system
+     * Generate Grades Trend Chart - Line chart showing grade progression over time
+     * Updated to accept real user data instead of using simulated data
      */
     public function generateGradesTrendChart($gradeData, $title = "Grade Progression Over Time", $width = 800, $height = 600) {
-        return $this->createErrorResponse("Chart generation has been disabled. This system now provides analytics data only.");
+        // Validate dimensions
+        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
+            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
+        }
+        
+        try {
+            // Parse grade data - expected format: "Week 1:85,Week 2:87,Week 3:90"
+            $parsedData = [];
+            if (is_string($gradeData)) {
+                $dataPoints = explode(',', $gradeData);
+                foreach ($dataPoints as $point) {
+                    $parts = explode(':', $point);
+                    if (count($parts) == 2) {
+                        $parsedData[trim($parts[0])] = floatval($parts[1]);
+                    }
+                }
+            } else if (is_array($gradeData)) {
+                $parsedData = $gradeData;
+            }
+            
+            if (empty($parsedData)) {
+                return $this->createErrorResponse("No valid grade trend data provided");
+            }
+            
+            $chart = new ChartGenerator($width, $height);
+            $base64Image = $chart->generateLineChart($parsedData, $title, "Assessment Period", "Grade");
+            
+            return json_encode([
+                'success' => true,
+                'chartType' => 'grades_trend',
+                'imageData' => $base64Image,
+                'dataPoints' => count($parsedData)
+            ]);
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating grades trend chart: " . $e->getMessage());
+        }
     }
     
     /**
-     * Generate Subject Comparison Chart - DISABLED 
-     * Chart functionality has been removed from the system
+     * Generate Subject Comparison Chart - Bar chart comparing performance across subjects
+     * Updated to accept real user data instead of using simulated data
      */
     public function generateSubjectComparisonChart($courseNames, $studentGrades, $classAverages, $width = 800, $height = 600) {
-        return $this->createErrorResponse("Chart generation has been disabled. This system now provides analytics data only.");
+        // Validate dimensions
+        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
+            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
+        }
+        
+        try {
+            // Parse input data
+            $courses = explode(',', $courseNames);
+            $grades = array_map('floatval', explode(',', $studentGrades));
+            $averages = array_map('floatval', explode(',', $classAverages));
+            
+            // Validate data consistency
+            if (count($courses) !== count($grades) || count($grades) !== count($averages)) {
+                return $this->createErrorResponse("Course names, student grades, and class averages must have the same number of elements");
+            }
+            
+            if (empty($courses)) {
+                return $this->createErrorResponse("No course data provided");
+            }
+            
+            // Create data arrays for double bar chart
+            $studentData = array_combine($courses, $grades);
+            $classAverageData = array_combine($courses, $averages);
+            
+            $chart = new ChartGenerator($width, $height);
+            $base64Image = $chart->generateDoubleBarChart(
+                $studentData, 
+                $classAverageData, 
+                "Course Performance Comparison - Student vs Class Average", 
+                "Courses", 
+                "Grade"
+            );
+            
+            return json_encode([
+                'success' => true,
+                'chartType' => 'subject_comparison_double_bar',
+                'imageData' => $base64Image,
+                'courses' => $courses,
+                'dataPoints' => count($courses)
+            ]);
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating subject comparison chart: " . $e->getMessage());
+        }
     }
     
     /**
@@ -346,27 +423,141 @@ class StudentAnalyticsService {
     }
     
     /**
-     * Generate Course Comparison Chart with Analysis Integration - DISABLED
-     * Chart functionality has been removed from the system
+     * Generate Course Comparison Chart with Analysis Integration
+     * Combines course comparison analysis with visual chart representation
      */
     public function generateCourseComparisonWithAnalysis($studentId, $courseNames, $studentGrades, $classAverages, $creditUnits, $width = 800, $height = 600) {
-        return $this->createErrorResponse("Chart generation has been disabled. Use compareCourses() method for analysis data only.");
+        try {
+            // First perform the course analysis to get meaningful results
+            $analysisResult = $this->compareCourses($studentId, $courseNames, $studentGrades, $classAverages, $creditUnits);
+            $analysisData = json_decode($analysisResult, true);
+            
+            // Generate the double bar chart with real data
+            $chartResult = $this->generateSubjectComparisonChart($courseNames, $studentGrades, $classAverages, $width, $height);
+            $chartData = json_decode($chartResult, true);
+            
+            if (!$chartData['success']) {
+                return $chartResult; // Return chart error
+            }
+            
+            // Combine analysis results with chart
+            return json_encode([
+                'success' => true,
+                'chartType' => 'course_comparison_with_analysis',
+                'imageData' => $chartData['imageData'],
+                'analysis' => $analysisData,
+                'studentId' => $studentId,
+                'courses' => explode(',', $courseNames),
+                'dataPoints' => $chartData['dataPoints']
+            ]);
+            
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating course comparison with analysis: " . $e->getMessage());
+        }
     }
     
     /**
-     * Generate Comprehensive Grade Analysis Chart - DISABLED
-     * Chart functionality has been removed from the system
+     * Generate Comprehensive Grade Analysis Chart
+     * Combines grade analysis with trend chart visualization
      */
     public function generateGradeAnalysisWithChart($studentId, $currentGrades, $courseUnits, $historicalGrades, $gradeFormat = 'auto', $width = 800, $height = 600) {
-        return $this->createErrorResponse("Chart generation has been disabled. Use analyzeGrades() method for analysis data only.");
+        try {
+            // First perform the grade analysis
+            $analysisResult = $this->analyzeGrades($studentId, $currentGrades, $courseUnits, $historicalGrades, $gradeFormat);
+            $analysisData = json_decode($analysisResult, true);
+            
+            // Create trend data from historical and current grades
+            $grades = array_map('floatval', explode(',', $currentGrades));
+            $historical = array_map(function($term) {
+                return array_map('floatval', explode(',', $term));
+            }, explode(';', $historicalGrades));
+            
+            // Build trend data for chart
+            $trendData = [];
+            $termCounter = 1;
+            
+            // Add historical terms
+            foreach ($historical as $termGrades) {
+                if (!empty($termGrades)) {
+                    $termAverage = array_sum($termGrades) / count($termGrades);
+                    $trendData["Term $termCounter"] = round($termAverage, 2);
+                    $termCounter++;
+                }
+            }
+            
+            // Add current term
+            $currentAverage = array_sum($grades) / count($grades);
+            $trendData["Current Term"] = round($currentAverage, 2);
+            
+            // Generate trend chart
+            $chartResult = $this->generateGradesTrendChart($trendData, "Grade Analysis - Student $studentId Performance Trend", $width, $height);
+            $chartData = json_decode($chartResult, true);
+            
+            if (!$chartData['success']) {
+                return $chartResult; // Return chart error
+            }
+            
+            // Combine analysis results with chart
+            return json_encode([
+                'success' => true,
+                'chartType' => 'grade_analysis_with_chart',
+                'imageData' => $chartData['imageData'],
+                'analysis' => $analysisData,
+                'studentId' => $studentId,
+                'dataPoints' => $chartData['dataPoints']
+            ]);
+            
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating grade analysis with chart: " . $e->getMessage());
+        }
     }
     
     /**
-     * Generate Predictive Modeling with Chart Integration - DISABLED
-     * Chart functionality has been removed from the system
+     * Generate Predictive Modeling with Chart Integration
+     * Combines predictive analysis with trend chart and forecast visualization
      */
     public function generatePredictionWithChart($studentId, $historicalGrades, $attendanceRate, $courseHours, $creditUnits, $gradeFormat = 'auto', $width = 800, $height = 600) {
-        return $this->createErrorResponse("Chart generation has been disabled. Use generatePrediction() method for prediction data only.");
+        try {
+            // First perform the predictive analysis
+            $predictionResult = $this->generatePrediction($studentId, $historicalGrades, $attendanceRate, $courseHours, $creditUnits, $gradeFormat);
+            $predictionData = json_decode($predictionResult, true);
+            
+            // Create trend data from historical grades for chart
+            $grades = array_map('floatval', explode(',', $historicalGrades));
+            $trendData = [];
+            
+            // Create time series data from historical grades
+            for ($i = 0; $i < count($grades); $i++) {
+                $periodLabel = "Period " . ($i + 1);
+                $trendData[$periodLabel] = $grades[$i];
+            }
+            
+            // Add predicted grade as the next point
+            $nextPeriod = "Predicted";
+            $trendData[$nextPeriod] = $predictionData['predictedGrade'];
+            
+            // Generate the trend chart
+            $chartTitle = "Grade Prediction - Student $studentId Performance Trend & Forecast";
+            $chartResult = $this->generateGradesTrendChart($trendData, $chartTitle, $width, $height);
+            $chartData = json_decode($chartResult, true);
+            
+            if (!$chartData['success']) {
+                return $chartResult; // Return chart error
+            }
+            
+            // Combine prediction results with chart
+            return json_encode([
+                'success' => true,
+                'chartType' => 'prediction_with_chart',
+                'imageData' => $chartData['imageData'],
+                'prediction' => $predictionData,
+                'studentId' => $studentId,
+                'dataPoints' => $chartData['dataPoints']
+            ]);
+            
+        } catch (Exception $e) {
+            return $this->createErrorResponse("Error generating prediction with chart: " . $e->getMessage());
+        }
     }
     
     // Chart data generation methods (simulating database queries)
