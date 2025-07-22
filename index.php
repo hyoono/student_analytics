@@ -34,9 +34,7 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="pills-scholarship-tab" data-bs-toggle="pill" data-bs-target="#pills-scholarship" type="button" role="tab">Scholarship Eligibility</button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="pills-charts-tab" data-bs-toggle="pill" data-bs-target="#pills-charts" type="button" role="tab">Visual Analytics</button>
-            </li>
+
         </ul>
         
         <div class="tab-content" id="pills-tabContent">
@@ -259,153 +257,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Visual Analytics Tab -->
-            <div class="tab-pane fade" id="pills-charts" role="tabpanel">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Visual Analytics - Chart Generation</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h5>Student Performance Charts</h5>
-                                <form method="POST" action="" class="mb-3">
-                                    <input type="hidden" name="action" value="grades_trend_chart">
-                                    <div class="mb-3">
-                                        <label class="form-label">Student ID</label>
-                                        <input type="text" class="form-control" name="student_id" required>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Width (400-1200)</label>
-                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Height (300-800)</label>
-                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary btn-sm">Generate Grades Trend Chart</button>
-                                </form>
-                                
-                                <form method="POST" action="" class="mb-3">
-                                    <input type="hidden" name="action" value="course_comparison_chart">
-                                    <div class="mb-3">
-                                        <label class="form-label">Course Names (comma-separated)</label>
-                                        <input type="text" class="form-control" name="course_names" placeholder="Math,Physics,Chemistry" required>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Student Grades</label>
-                                                <input type="text" class="form-control" name="student_grades" placeholder="1.25,1.50,2.00" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Class Averages</label>
-                                                <input type="text" class="form-control" name="class_averages" placeholder="1.75,2.00,2.25" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="mb-3">
-                                                <label class="form-label">Width</label>
-                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="mb-3">
-                                                <label class="form-label">Height</label>
-                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-success btn-sm">Generate Course Comparison Chart</button>
-                                </form>
-                                
-                                <form method="POST" action="" class="mb-3">
-                                    <input type="hidden" name="action" value="twa_progress_chart">
-                                    <div class="mb-3">
-                                        <label class="form-label">Student ID</label>
-                                        <input type="text" class="form-control" name="student_id" required>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Width</label>
-                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Height</label>
-                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-warning btn-sm">Generate TWA Progress Chart</button>
-                                </form>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <h5>Class Analytics Charts</h5>
-                                <form method="POST" action="" class="mb-3">
-                                    <input type="hidden" name="action" value="performance_distribution_chart">
-                                    <div class="mb-3">
-                                        <label class="form-label">Class ID</label>
-                                        <input type="text" class="form-control" name="class_id" required>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Width</label>
-                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Height</label>
-                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-info btn-sm">Generate Performance Distribution Chart</button>
-                                </form>
-                                
-                                <form method="POST" action="" class="mb-3">
-                                    <input type="hidden" name="action" value="class_average_chart">
-                                    <div class="mb-3">
-                                        <label class="form-label">Class ID</label>
-                                        <input type="text" class="form-control" name="class_id" required>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Width</label>
-                                                <input type="number" class="form-control" name="width" value="800" min="400" max="1200">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Height</label>
-                                                <input type="number" class="form-control" name="height" value="600" min="300" max="800">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-secondary btn-sm">Generate Class Average Chart</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
         </div>
         
         <?php
@@ -421,7 +273,6 @@
                 
                 $action = $_POST['action'];
                 $result = null;
-                $chartData = null;
                 
                 switch ($action) {
                     case 'grade_analysis':
@@ -432,23 +283,6 @@
                             $_POST['historical_grades'],
                             $_POST['grade_format'] ?? 'auto'
                         );
-                        
-                        // Generate integrated chart with analysis
-                        try {
-                            $chartResult = $client->generateGradeAnalysisWithChart(
-                                $_POST['student_id'],
-                                $_POST['current_grades'],
-                                $_POST['course_units'],
-                                $_POST['historical_grades'],
-                                $_POST['grade_format'] ?? 'auto',
-                                600,
-                                400
-                            );
-                            $chartData = json_decode($chartResult, true);
-                        } catch (Exception $chartError) {
-                            // Chart failed, continue with just analysis
-                            error_log("Chart generation failed: " . $chartError->getMessage());
-                        }
                         break;
                         
                     case 'course_comparison':
@@ -459,35 +293,16 @@
                             $_POST['class_averages'],
                             $_POST['credit_units']
                         );
-                        
-                        // Generate integrated chart with analysis
-                        try {
-                            $chartResult = $client->generateCourseComparisonWithAnalysis(
-                                $_POST['student_id'],
-                                $_POST['course_names'],
-                                $_POST['student_grades'],
-                                $_POST['class_averages'],
-                                $_POST['credit_units'],
-                                600,
-                                400
-                            );
-                            $chartData = json_decode($chartResult, true);
-                        } catch (Exception $chartError) {
-                            error_log("Chart generation failed: " . $chartError->getMessage());
-                        }
                         break;
                         
                     case 'predictive_modeling':
-                        // Use integrated prediction with chart method
-                        $result = $client->generatePredictionWithChart(
+                        $result = $client->generatePrediction(
                             $_POST['student_id'],
                             $_POST['historical_grades'],
                             $_POST['attendance_rate'],
                             $_POST['course_hours'] ?? '0',
                             $_POST['credit_units'] ?? '0',
-                            $_POST['grade_format'] ?? 'auto',
-                            600,
-                            400
+                            $_POST['grade_format'] ?? 'auto'
                         );
                         break;
                         
@@ -498,61 +313,8 @@
                             $_POST['credit_units'],
                             $_POST['completed_units']
                         );
-                        
-                        // Try to generate chart
-                        try {
-                            $chartResult = $client->generateGPAProgressChart(
-                                $_POST['student_id'],
-                                600,
-                                400
-                            );
-                            $chartData = json_decode($chartResult, true);
-                        } catch (Exception $chartError) {
-                            error_log("Chart generation failed: " . $chartError->getMessage());
-                        }
                         break;
-                        
-                    case 'grades_trend_chart':
-                        $result = $client->generateGradesTrendChart(
-                            $_POST['student_id'],
-                            $_POST['width'],
-                            $_POST['height']
-                        );
-                        break;
-                        
-                    case 'course_comparison_chart':
-                        $result = $client->generateSubjectComparisonChart(
-                            $_POST['course_names'],
-                            $_POST['student_grades'],
-                            $_POST['class_averages'],
-                            $_POST['width'],
-                            $_POST['height']
-                        );
-                        break;
-                        
-                    case 'twa_progress_chart':
-                        $result = $client->generateGPAProgressChart(
-                            $_POST['student_id'],
-                            $_POST['width'],
-                            $_POST['height']
-                        );
-                        break;
-                        
-                    case 'performance_distribution_chart':
-                        $result = $client->generatePerformanceDistributionChart(
-                            $_POST['class_id'],
-                            $_POST['width'],
-                            $_POST['height']
-                        );
-                        break;
-                        
-                    case 'class_average_chart':
-                        $result = $client->generateClassAverageChart(
-                            $_POST['class_id'],
-                            $_POST['width'],
-                            $_POST['height']
-                        );
-                        break;
+
                 }
                 
                 if ($result) {
@@ -560,84 +322,15 @@
                     echo '<div class="result-card">';
                     echo '<h5>Results for ' . ucfirst(str_replace('_', ' ', $action)) . '</h5>';
                     
-                    // Check if this is a standalone chart result (from Visual Analytics tab)
-                    if (isset($data['chartType']) && isset($data['imageData']) && !isset($data['prediction']) && !isset($data['analysis'])) {
-                        if ($data['success']) {
-                            echo '<div class="text-center">';
-                            echo '<img src="data:image/png;base64,' . $data['imageData'] . '" class="img-fluid border" alt="Generated Chart" style="max-width: 100%; height: auto;">';
-                            echo '</div>';
-                            echo '<div class="row mt-3">';
-                            foreach ($data as $key => $value) {
-                                if ($key !== 'imageData') {
-                                    $label = ucwords(str_replace('_', ' ', $key));
-                                    echo '<div class="col-md-6 mb-2">';
-                                    echo "<strong>$label:</strong> $value";
-                                    echo '</div>';
-                                }
-                            }
-                            echo '</div>';
-                        } else {
-                            echo '<div class="alert alert-danger">';
-                            echo '<strong>Chart Generation Failed:</strong> ' . $data['error'];
-                            echo '</div>';
-                        }
-                    } else if (isset($data['chartType']) && isset($data['imageData']) && (isset($data['prediction']) || isset($data['analysis']))) {
-                        // This is an integrated chart result (prediction_with_chart, grade_analysis_with_chart, etc.)
-                        if ($data['success']) {
-                            // Display the analysis data first
-                            $analysisData = isset($data['prediction']) ? $data['prediction'] : $data['analysis'];
-                            echo '<div class="row">';
-                            foreach ($analysisData as $key => $value) {
-                                if (!is_array($value)) {
-                                    $label = ucwords(str_replace('_', ' ', $key));
-                                    echo '<div class="col-md-6 mb-2">';
-                                    echo "<strong>$label:</strong> $value";
-                                    echo '</div>';
-                                }
-                            }
-                            echo '</div>';
-                            
-                            // Display the integrated chart
-                            echo '<div class="mt-4">';
-                            echo '<h6>📊 Visual Analysis</h6>';
-                            echo '<div class="text-center">';
-                            echo '<img src="data:image/png;base64,' . $data['imageData'] . '" class="img-fluid border" alt="Generated Chart" style="max-width: 100%; height: auto;">';
-                            echo '</div>';
-                            echo '<p class="text-center mt-2"><small class="text-muted">Integrated chart for ' . ucfirst(str_replace('_', ' ', $action)) . '</small></p>';
-                            echo '</div>';
-                        } else {
-                            echo '<div class="alert alert-danger">';
-                            echo '<strong>Chart Generation Failed:</strong> ' . $data['error'];
-                            echo '</div>';
-                        }
-                    } else {
-                        // Display analysis results first
-                        echo '<div class="row">';
-                        foreach ($data as $key => $value) {
-                            $label = ucwords(str_replace('_', ' ', $key));
-                            echo '<div class="col-md-6 mb-2">';
-                            echo "<strong>$label:</strong> $value";
-                            echo '</div>';
-                        }
+                    // Display analysis results
+                    echo '<div class="row">';
+                    foreach ($data as $key => $value) {
+                        $label = ucwords(str_replace('_', ' ', $key));
+                        echo '<div class="col-md-6 mb-2">';
+                        echo "<strong>$label:</strong> $value";
                         echo '</div>';
-                        
-                        // Display integrated chart if available
-                        if ($chartData && isset($chartData['success']) && $chartData['success']) {
-                            echo '<div class="mt-4">';
-                            echo '<h6>📊 Visual Analysis</h6>';
-                            echo '<div class="text-center">';
-                            echo '<img src="data:image/png;base64,' . $chartData['imageData'] . '" class="img-fluid border" alt="Generated Chart" style="max-width: 100%; height: auto;">';
-                            echo '</div>';
-                            echo '<p class="text-center mt-2"><small class="text-muted">Integrated chart for ' . ucfirst(str_replace('_', ' ', $action)) . '</small></p>';
-                            echo '</div>';
-                        } else if ($chartData) {
-                            echo '<div class="mt-4">';
-                            echo '<div class="alert alert-info">';
-                            echo '<strong>Chart Integration:</strong> Chart generation is working but encountered an issue. Analysis results are shown above.';
-                            echo '</div>';
-                            echo '</div>';
-                        }
                     }
+                    echo '</div>';
                     echo '</div>';
                 }
                 

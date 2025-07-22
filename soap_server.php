@@ -10,8 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// Include chart generation class
-require_once 'charts/ChartGenerator.php';
+// Include chart generation class - DISABLED
+// require_once 'charts/ChartGenerator.php';
 
 class StudentAnalyticsService {
     
