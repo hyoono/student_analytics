@@ -406,8 +406,8 @@
                             $_POST['twa'],
                             $_POST['credit_units'],
                             $_POST['completed_units'],
-                            $_POST['year_level'],
-                            $_POST['deans_list_status']
+                            isset($_POST['year_level']) ? $_POST['year_level'] : '',
+                            isset($_POST['deans_list_status']) ? $_POST['deans_list_status'] : 'none'
                         );
                         break;
 

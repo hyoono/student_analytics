@@ -280,30 +280,24 @@ class StudentAnalyticsService {
             if ($studentTWA >= 1.00 && $studentTWA <= 1.50) {
                 $eligibilityStatus = "Conditional";
                 $score = 85; // High conditional score
-                $eligibleScholarships = [
-                    "Top Spot Dean's Lister Academic Scholarship",
-                    "Mapua MCL Academic Excellence Award"
-                ];
+                $eligibleScholarships = ["Academic Scholarship"];
                 
                 // Perfect TWA range gets full eligibility
                 if ($studentTWA >= 1.00 && $studentTWA <= 1.25) {
                     $eligibilityStatus = "Eligible";
                     $score = 95;
-                    $eligibleScholarships[] = "President's List Academic Scholarship";
+                    $eligibleScholarships = ["Academic Scholarship"];
                 }
             } else {
                 $eligibilityStatus = "Review Required";
                 $score = 70;
-                $eligibleScholarships = ["Academic Review Program"];
+                $eligibleScholarships = [];
             }
         } else if ($deansListStatus === 'regular') {
             if ($studentTWA >= 1.00 && $studentTWA <= 1.50) {
                 $eligibilityStatus = "Conditional";
                 $score = 75;
-                $eligibleScholarships = [
-                    "Dean's List Academic Scholarship",
-                    "Academic Achievement Recognition"
-                ];
+                $eligibleScholarships = ["Academic Scholarship"];
             } else {
                 $eligibilityStatus = "Not Eligible";
                 $score = 40;
@@ -313,7 +307,7 @@ class StudentAnalyticsService {
             if ($studentTWA >= 1.00 && $studentTWA <= 1.25) {
                 $eligibilityStatus = "Conditional";
                 $score = 60;
-                $eligibleScholarships = ["Academic Potential Scholarship"];
+                $eligibleScholarships = ["Academic Scholarship"];
             } else {
                 $eligibilityStatus = "Not Eligible";
                 $score = 30;
