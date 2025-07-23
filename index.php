@@ -265,7 +265,7 @@
             try {
                 // First try to get the analysis results
                 $client = new SoapClient(null, array(
-                    'location' => 'http://localhost/student_analytics/soap_server.php',
+                    'location' => 'http://localhost:8080/soap_server.php',
                     'uri' => 'http://localhost/student_analytics',
                     'trace' => 1,
                     'connection_timeout' => 30
@@ -330,17 +330,46 @@
                         break;
                         
                     case 'predictive_modeling':
-                        // Use integrated prediction with chart method
-                        $result = $client->generatePredictionWithChart(
-                            $_POST['student_id'],
-                            $_POST['historical_grades'],
-                            $_POST['attendance_rate'],
-                            $_POST['course_hours'] ?? '0',
-                            $_POST['credit_units'] ?? '0',
-                            $_POST['grade_format'] ?? 'auto',
-                            600,
-                            400
-                        );
+                        // Generate integrated chart with analysis
+                        try {
+                            $chartResult = $client->generatePredictionWithChart(
+                                $_POST['student_id'],
+                                $_POST['historical_grades'],
+                                $_POST['attendance_rate'],
+                                $_POST['course_hours'] ?? '0',
+                                $_POST['credit_units'] ?? '0',
+                                $_POST['grade_format'] ?? 'auto',
+                                600,
+                                400
+                            );
+                            $chartData = json_decode($chartResult, true);
+                            
+                            // Extract prediction data from the chart response
+                            if ($chartData && isset($chartData['prediction'])) {
+                                $result = json_encode($chartData['prediction']);
+                            } else {
+                                // Fallback to basic prediction if chart fails
+                                $result = $client->generatePrediction(
+                                    $_POST['student_id'],
+                                    $_POST['historical_grades'],
+                                    $_POST['attendance_rate'],
+                                    $_POST['course_hours'] ?? '0',
+                                    $_POST['credit_units'] ?? '0',
+                                    $_POST['grade_format'] ?? 'auto'
+                                );
+                            }
+                        } catch (Exception $chartError) {
+                            // Chart failed, use basic prediction
+                            error_log("Chart generation failed: " . $chartError->getMessage());
+                            $result = $client->generatePrediction(
+                                $_POST['student_id'],
+                                $_POST['historical_grades'],
+                                $_POST['attendance_rate'],
+                                $_POST['course_hours'] ?? '0',
+                                $_POST['credit_units'] ?? '0',
+                                $_POST['grade_format'] ?? 'auto'
+                            );
+                        }
                         break;
                         
                     case 'scholarship_eligibility':
