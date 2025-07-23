@@ -89,10 +89,19 @@ class StudentAnalyticsService {
         $gradeFormat = $this->detectGradeFormat($grades);
         
         // Find best and worst performing courses
-        $maxGrade = max($grades);
-        $minGrade = min($grades);
-        $bestCourseIndex = array_search($maxGrade, $grades);
-        $worstCourseIndex = array_search($minGrade, $grades);
+        // For transmuted grades: lower values (closer to 1.00) are BETTER grades
+        // For raw grades: higher values are BETTER grades
+        if ($gradeFormat === 'transmuted') {
+            $bestGrade = min($grades);    // Lower grade = better in transmuted
+            $worstGrade = max($grades);   // Higher grade = worse in transmuted
+            $bestCourseIndex = array_search($bestGrade, $grades);
+            $worstCourseIndex = array_search($worstGrade, $grades);
+        } else {
+            $bestGrade = max($grades);    // Higher grade = better in raw
+            $worstGrade = min($grades);   // Lower grade = worse in raw
+            $bestCourseIndex = array_search($bestGrade, $grades);
+            $worstCourseIndex = array_search($worstGrade, $grades);
+        }
         
         $bestCourse = $courses[$bestCourseIndex];
         $weakestCourse = $courses[$worstCourseIndex];
@@ -101,13 +110,25 @@ class StudentAnalyticsService {
         $twa = $this->calculateTWA($grades, $units, $gradeFormat);
         
         // Compare with class averages
+        // For transmuted grades: lower values are better
+        // For raw grades: higher values are better
         $coursesAboveAverage = [];
         $coursesBelowAverage = [];
         for ($i = 0; $i < count($grades); $i++) {
-            if ($grades[$i] > $averages[$i]) {
-                $coursesAboveAverage[] = $courses[$i];
+            if ($gradeFormat === 'transmuted') {
+                // For transmuted: student grade < class average means better performance
+                if ($grades[$i] < $averages[$i]) {
+                    $coursesAboveAverage[] = $courses[$i];
+                } else {
+                    $coursesBelowAverage[] = $courses[$i];
+                }
             } else {
-                $coursesBelowAverage[] = $courses[$i];
+                // For raw: student grade > class average means better performance
+                if ($grades[$i] > $averages[$i]) {
+                    $coursesAboveAverage[] = $courses[$i];
+                } else {
+                    $coursesBelowAverage[] = $courses[$i];
+                }
             }
         }
         
@@ -120,13 +141,13 @@ class StudentAnalyticsService {
         $performanceVariance = $variance / count($grades);
         
         // Generate recommendations
-        $recommendations = $this->generateCourseRecommendations($courses, $grades, $averages);
+        $recommendations = $this->generateCourseRecommendations($courses, $grades, $averages, $gradeFormat);
         
         return json_encode([
             'bestCourse' => $bestCourse,
-            'bestGrade' => $maxGrade,
+            'bestGrade' => $bestGrade,
             'weakestCourse' => $weakestCourse,
-            'weakestGrade' => $minGrade,
+            'weakestGrade' => $worstGrade,
             'twa' => $twa,
             'gradeFormat' => $gradeFormat,
             'coursesAboveAverage' => implode(',', $coursesAboveAverage),
@@ -848,12 +869,20 @@ class StudentAnalyticsService {
         return implode("; ", $suggestions);
     }
     
-    private function generateCourseRecommendations($courses, $grades, $averages) {
+    private function generateCourseRecommendations($courses, $grades, $averages, $gradeFormat = 'raw') {
         $recommendations = [];
         
         for ($i = 0; $i < count($grades); $i++) {
-            if ($grades[$i] < $averages[$i] - 5) {
-                $recommendations[] = "Focus additional study time on " . $courses[$i];
+            if ($gradeFormat === 'transmuted') {
+                // For transmuted grades: if student grade > class average + 0.25, they need help
+                if ($grades[$i] > $averages[$i] + 0.25) {
+                    $recommendations[] = "Focus additional study time on " . $courses[$i];
+                }
+            } else {
+                // For raw grades: if student grade < class average - 5, they need help
+                if ($grades[$i] < $averages[$i] - 5) {
+                    $recommendations[] = "Focus additional study time on " . $courses[$i];
+                }
             }
         }
         
