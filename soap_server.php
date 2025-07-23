@@ -89,10 +89,19 @@ class StudentAnalyticsService {
         $gradeFormat = $this->detectGradeFormat($grades);
         
         // Find best and worst performing courses
-        $maxGrade = max($grades);
-        $minGrade = min($grades);
-        $bestCourseIndex = array_search($maxGrade, $grades);
-        $worstCourseIndex = array_search($minGrade, $grades);
+        // For transmuted grades: lower values (closer to 1.00) are BETTER grades
+        // For raw grades: higher values are BETTER grades
+        if ($gradeFormat === 'transmuted') {
+            $bestGrade = min($grades);    // Lower grade = better in transmuted
+            $worstGrade = max($grades);   // Higher grade = worse in transmuted
+            $bestCourseIndex = array_search($bestGrade, $grades);
+            $worstCourseIndex = array_search($worstGrade, $grades);
+        } else {
+            $bestGrade = max($grades);    // Higher grade = better in raw
+            $worstGrade = min($grades);   // Lower grade = worse in raw
+            $bestCourseIndex = array_search($bestGrade, $grades);
+            $worstCourseIndex = array_search($worstGrade, $grades);
+        }
         
         $bestCourse = $courses[$bestCourseIndex];
         $weakestCourse = $courses[$worstCourseIndex];
@@ -101,13 +110,25 @@ class StudentAnalyticsService {
         $twa = $this->calculateTWA($grades, $units, $gradeFormat);
         
         // Compare with class averages
+        // For transmuted grades: lower values are better
+        // For raw grades: higher values are better
         $coursesAboveAverage = [];
         $coursesBelowAverage = [];
         for ($i = 0; $i < count($grades); $i++) {
-            if ($grades[$i] > $averages[$i]) {
-                $coursesAboveAverage[] = $courses[$i];
+            if ($gradeFormat === 'transmuted') {
+                // For transmuted: student grade < class average means better performance
+                if ($grades[$i] < $averages[$i]) {
+                    $coursesAboveAverage[] = $courses[$i];
+                } else {
+                    $coursesBelowAverage[] = $courses[$i];
+                }
             } else {
-                $coursesBelowAverage[] = $courses[$i];
+                // For raw: student grade > class average means better performance
+                if ($grades[$i] > $averages[$i]) {
+                    $coursesAboveAverage[] = $courses[$i];
+                } else {
+                    $coursesBelowAverage[] = $courses[$i];
+                }
             }
         }
         
@@ -120,13 +141,13 @@ class StudentAnalyticsService {
         $performanceVariance = $variance / count($grades);
         
         // Generate recommendations
-        $recommendations = $this->generateCourseRecommendations($courses, $grades, $averages);
+        $recommendations = $this->generateCourseRecommendations($courses, $grades, $averages, $gradeFormat);
         
         return json_encode([
             'bestCourse' => $bestCourse,
-            'bestGrade' => $maxGrade,
+            'bestGrade' => $bestGrade,
             'weakestCourse' => $weakestCourse,
-            'weakestGrade' => $minGrade,
+            'weakestGrade' => $worstGrade,
             'twa' => $twa,
             'gradeFormat' => $gradeFormat,
             'coursesAboveAverage' => implode(',', $coursesAboveAverage),
@@ -228,80 +249,91 @@ class StudentAnalyticsService {
      * Scholarship Eligibility - TWA-based decision system for Mapua MCL
      * Updated to use TWA instead of GPA and simplified criteria
      */
-    public function checkScholarshipEligibility($studentId, $twa, $creditUnits, $completedUnits) {
+    public function checkScholarshipEligibility($studentId, $twa, $creditUnits, $completedUnits, $yearLevel = null, $deansListStatus = null) {
         $studentTWA = floatval($twa);
         $currentUnits = floatval($creditUnits);
         $completedUnits = floatval($completedUnits);
         
-        // Validate TWA range (1.00-5.00, where 1.00 is highest)
-        if ($studentTWA < 1.00 || $studentTWA > 5.00) {
+        // Validate TWA range (1.00-2.00 for academic scholarships)
+        if ($studentTWA < 1.00 || $studentTWA > 2.00) {
             return json_encode([
                 'eligibilityStatus' => 'Invalid TWA',
-                'error' => 'TWA must be between 1.00 and 5.00'
+                'error' => 'TWA must be between 1.00 and 2.00 for academic scholarship consideration'
             ]);
         }
         
-        // Scoring system based on TWA and academic load
-        $twaScore = 0;
-        $academicLoadScore = 0;
-        $progressScore = 0;
-        
-        // TWA scoring (70 points max) - Lower TWA = Higher score
-        if ($studentTWA <= 1.25) $twaScore = 70;
-        else if ($studentTWA <= 1.50) $twaScore = 60;
-        else if ($studentTWA <= 1.75) $twaScore = 50;
-        else if ($studentTWA <= 2.00) $twaScore = 40;
-        else if ($studentTWA <= 2.25) $twaScore = 30;
-        else if ($studentTWA <= 2.50) $twaScore = 20;
-        else if ($studentTWA <= 2.75) $twaScore = 10;
-        else if ($studentTWA <= 3.00) $twaScore = 5;
-        else $twaScore = 0; // Failed grades
-        
-        // Academic load scoring (20 points max)
-        if ($currentUnits >= 18) $academicLoadScore = 20;
-        else if ($currentUnits >= 15) $academicLoadScore = 15;
-        else if ($currentUnits >= 12) $academicLoadScore = 10;
-        else $academicLoadScore = 5;
-        
-        // Progress scoring (10 points max)
-        if ($completedUnits >= 100) $progressScore = 10;
-        else if ($completedUnits >= 75) $progressScore = 8;
-        else if ($completedUnits >= 50) $progressScore = 6;
-        else if ($completedUnits >= 25) $progressScore = 4;
-        else $progressScore = 2;
-        
-        $overallScore = $twaScore + $academicLoadScore + $progressScore;
-        
-        // Determine eligibility status and scholarship categories
-        $eligibilityStatus = "Not Eligible";
-        $eligibleScholarships = [];
-        
-        if ($overallScore >= 80 && $studentTWA <= 1.50) {
-            $eligibilityStatus = "Eligible";
-            $eligibleScholarships = ["Academic Excellence Scholarship", "Dean's List Award"];
-            if ($studentTWA <= 1.25) {
-                $eligibleScholarships[] = "President's List Scholarship";
-            }
-        } else if ($overallScore >= 60 && $studentTWA <= 2.00) {
-            $eligibilityStatus = "Conditional";
-            $eligibleScholarships = ["Merit Scholarship", "Academic Achievement Award"];
-        } else if ($overallScore >= 40 && $studentTWA <= 2.50) {
-            $eligibilityStatus = "Conditional";
-            $eligibleScholarships = ["Academic Improvement Grant"];
+        // Validate unit load (maximum 18 units as per Mapua MCL requirements)
+        if ($currentUnits > 18) {
+            return json_encode([
+                'eligibilityStatus' => 'Exceeds Unit Load',
+                'error' => 'Current credit units exceed maximum allowed (18 units)'
+            ]);
         }
         
-        // Generate recommendations
-        $recommendations = $this->generateScholarshipRecommendations($overallScore, $twaScore, $academicLoadScore, $progressScore, $studentTWA);
+        // Mapua MCL Academic Scholarship Eligibility Logic
+        $eligibilityStatus = "Not Eligible";
+        $eligibleScholarships = [];
+        $score = 0;
+        
+        // Primary requirement: Top Spot Dean's Lister status
+        if ($deansListStatus === 'top_spot') {
+            if ($studentTWA >= 1.00 && $studentTWA <= 1.50) {
+                $eligibilityStatus = "Conditional";
+                $score = 85; // High conditional score
+                $eligibleScholarships = ["Academic Scholarship"];
+                
+                // Perfect TWA range gets full eligibility
+                if ($studentTWA >= 1.00 && $studentTWA <= 1.25) {
+                    $eligibilityStatus = "Eligible";
+                    $score = 95;
+                    $eligibleScholarships = ["Academic Scholarship"];
+                }
+            } else {
+                $eligibilityStatus = "Review Required";
+                $score = 70;
+                $eligibleScholarships = [];
+            }
+        } else if ($deansListStatus === 'regular') {
+            if ($studentTWA >= 1.00 && $studentTWA <= 1.50) {
+                $eligibilityStatus = "Conditional";
+                $score = 75;
+                $eligibleScholarships = ["Academic Scholarship"];
+            } else {
+                $eligibilityStatus = "Not Eligible";
+                $score = 40;
+            }
+        } else {
+            // Not on Dean's List
+            if ($studentTWA >= 1.00 && $studentTWA <= 1.25) {
+                $eligibilityStatus = "Conditional";
+                $score = 60;
+                $eligibleScholarships = ["Academic Scholarship"];
+            } else {
+                $eligibilityStatus = "Not Eligible";
+                $score = 30;
+            }
+        }
+        
+        // Adjust score based on unit load and progress
+        if ($currentUnits >= 15) $score += 5;
+        if ($completedUnits >= 100) $score += 10;
+        else if ($completedUnits >= 75) $score += 7;
+        else if ($completedUnits >= 50) $score += 5;
+        
+        // Generate recommendations specific to Mapua MCL requirements
+        $recommendations = $this->generateMapuaMCLRecommendations($eligibilityStatus, $studentTWA, $deansListStatus, $currentUnits);
         
         return json_encode([
             'eligibilityStatus' => $eligibilityStatus,
-            'overallScore' => round($overallScore, 2),
+            'overallScore' => round($score, 2),
             'twa' => $studentTWA,
-            'twaScore' => round($twaScore, 2),
-            'academicLoadScore' => round($academicLoadScore, 2),
-            'progressScore' => round($progressScore, 2),
+            'yearLevel' => $yearLevel,
+            'deansListStatus' => ucwords(str_replace('_', ' ', $deansListStatus)),
+            'currentUnits' => $currentUnits,
+            'completedUnits' => $completedUnits,
             'eligibleScholarships' => implode(',', $eligibleScholarships),
-            'recommendations' => $recommendations
+            'recommendations' => $recommendations,
+            'notes' => 'Subject to review and spot availability as per Mapua MCL SPGs on Dean\'s List and President\'s List effective AY 2022-2023'
         ]);
     }
     
@@ -399,115 +431,32 @@ class StudentAnalyticsService {
     }
     
     /**
-     * Generate GPA Progress Chart - Line chart showing GPA/TWA changes over terms
-     * Updated to accept real user data instead of using simulated data
+     * Generate GPA Progress Chart - DISABLED
+     * Chart functionality has been removed from the system 
      */
     public function generateGPAProgressChart($progressData, $title = "TWA Progress Over Terms", $width = 800, $height = 600) {
-        // Validate dimensions
-        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
-            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
-        }
-        
-        try {
-            // Parse progress data - expected format: "Fall 2022:1.75,Spring 2023:1.50,Fall 2023:1.25"
-            $parsedData = [];
-            if (is_string($progressData)) {
-                $dataPoints = explode(',', $progressData);
-                foreach ($dataPoints as $point) {
-                    $parts = explode(':', $point);
-                    if (count($parts) == 2) {
-                        $parsedData[trim($parts[0])] = floatval($parts[1]);
-                    }
-                }
-            } else if (is_array($progressData)) {
-                $parsedData = $progressData;
-            }
-            
-            if (empty($parsedData)) {
-                return $this->createErrorResponse("No valid TWA progress data provided");
-            }
-            
-            $chart = new ChartGenerator($width, $height);
-            $base64Image = $chart->generateLineChart($parsedData, $title, "Term", "TWA");
-            
-            return json_encode([
-                'success' => true,
-                'chartType' => 'twa_progress',
-                'imageData' => $base64Image,
-                'terms' => count($parsedData)
-            ]);
-        } catch (Exception $e) {
-            return $this->createErrorResponse("Error generating TWA progress chart: " . $e->getMessage());
-        }
+        return $this->createErrorResponse("Chart generation has been disabled. This system now provides analytics data only.");
     }
     
     /**
-     * Generate Performance Distribution Chart - Pie chart showing grade distribution in a class
+     * Generate Performance Distribution Chart - DISABLED
+     * Chart functionality has been removed from the system
      */
     public function generatePerformanceDistributionChart($classId, $width = 800, $height = 600) {
-        // Validate dimensions
-        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
-            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
-        }
-        
-        try {
-            // Simulate class performance distribution data
-            $distributionData = $this->getPerformanceDistributionData($classId);
-            
-            if (empty($distributionData)) {
-                return $this->createErrorResponse("Insufficient data for performance distribution chart");
-            }
-            
-            $chart = new ChartGenerator($width, $height);
-            $base64Image = $chart->generatePieChart($distributionData, "Grade Distribution - Class $classId");
-            
-            return json_encode([
-                'success' => true,
-                'chartType' => 'performance_distribution',
-                'imageData' => $base64Image,
-                'classId' => $classId,
-                'totalStudents' => array_sum(array_values($distributionData))
-            ]);
-        } catch (Exception $e) {
-            return $this->createErrorResponse("Error generating performance distribution chart: " . $e->getMessage());
-        }
+        return $this->createErrorResponse("Chart generation has been disabled. This system now provides analytics data only.");
     }
     
     /**
-     * Generate Class Average Chart - Bar chart comparing class averages by subject
+     * Generate Class Average Chart - DISABLED
+     * Chart functionality has been removed from the system
      */
     public function generateClassAverageChart($classId, $width = 800, $height = 600) {
-        // Validate dimensions
-        if ($width < 400 || $width > 1200 || $height < 300 || $height > 800) {
-            return $this->createErrorResponse("Invalid chart dimensions. Width must be 400-1200, Height must be 300-800");
-        }
-        
-        try {
-            // Simulate class average data by subject
-            $classAverageData = $this->getClassAverageData($classId);
-            
-            if (empty($classAverageData)) {
-                return $this->createErrorResponse("Insufficient data for class average chart");
-            }
-            
-            $chart = new ChartGenerator($width, $height);
-            $base64Image = $chart->generateBarChart($classAverageData, "Class Average by Subject - Class $classId", "Subjects", "Average Grade");
-            
-            return json_encode([
-                'success' => true,
-                'chartType' => 'class_average',
-                'imageData' => $base64Image,
-                'classId' => $classId,
-                'subjects' => count($classAverageData)
-            ]);
-        } catch (Exception $e) {
-            return $this->createErrorResponse("Error generating class average chart: " . $e->getMessage());
-        }
+        return $this->createErrorResponse("Chart generation has been disabled. This system now provides analytics data only.");
     }
     
     /**
      * Generate Course Comparison Chart with Analysis Integration
-     * This method combines course analysis with chart generation using real user data
+     * Combines course comparison analysis with visual chart representation
      */
     public function generateCourseComparisonWithAnalysis($studentId, $courseNames, $studentGrades, $classAverages, $creditUnits, $width = 800, $height = 600) {
         try {
@@ -541,7 +490,7 @@ class StudentAnalyticsService {
     
     /**
      * Generate Comprehensive Grade Analysis Chart
-     * This method combines grade analysis with trend chart generation using real user data
+     * Combines grade analysis with trend chart visualization
      */
     public function generateGradeAnalysisWithChart($studentId, $currentGrades, $courseUnits, $historicalGrades, $gradeFormat = 'auto', $width = 800, $height = 600) {
         try {
@@ -597,7 +546,7 @@ class StudentAnalyticsService {
     
     /**
      * Generate Predictive Modeling with Chart Integration
-     * This method combines predictive analysis with trend chart generation using real user data
+     * Combines predictive analysis with trend chart and forecast visualization
      */
     public function generatePredictionWithChart($studentId, $historicalGrades, $attendanceRate, $courseHours, $creditUnits, $gradeFormat = 'auto', $width = 800, $height = 600) {
         try {
@@ -931,12 +880,20 @@ class StudentAnalyticsService {
         return implode("; ", $suggestions);
     }
     
-    private function generateCourseRecommendations($courses, $grades, $averages) {
+    private function generateCourseRecommendations($courses, $grades, $averages, $gradeFormat = 'raw') {
         $recommendations = [];
         
         for ($i = 0; $i < count($grades); $i++) {
-            if ($grades[$i] < $averages[$i] - 5) {
-                $recommendations[] = "Focus additional study time on " . $courses[$i];
+            if ($gradeFormat === 'transmuted') {
+                // For transmuted grades: if student grade > class average + 0.25, they need help
+                if ($grades[$i] > $averages[$i] + 0.25) {
+                    $recommendations[] = "Focus additional study time on " . $courses[$i];
+                }
+            } else {
+                // For raw grades: if student grade < class average - 5, they need help
+                if ($grades[$i] < $averages[$i] - 5) {
+                    $recommendations[] = "Focus additional study time on " . $courses[$i];
+                }
             }
         }
         
@@ -994,6 +951,41 @@ class StudentAnalyticsService {
         
         if ($overall >= 80) {
             $recommendations[] = "Apply for multiple scholarship opportunities";
+        }
+        
+        return implode("; ", $recommendations);
+    }
+    
+    /**
+     * Generate recommendations specific to Mapua MCL Academic Scholarship requirements
+     */
+    private function generateMapuaMCLRecommendations($eligibilityStatus, $twa, $deansListStatus, $currentUnits) {
+        $recommendations = [];
+        
+        if ($deansListStatus !== 'top_spot') {
+            $recommendations[] = "Aim for Top Spot Dean's Lister status in your year level for primary scholarship eligibility";
+        }
+        
+        if ($twa > 1.50) {
+            $recommendations[] = "Improve TWA to 1.50 or below to meet conditional eligibility requirements";
+        } else if ($twa > 1.25) {
+            $recommendations[] = "Maintain current performance or improve TWA to 1.25 for better scholarship opportunities";
+        }
+        
+        if ($currentUnits < 15) {
+            $recommendations[] = "Consider increasing unit load to demonstrate full academic commitment (maximum 18 units)";
+        }
+        
+        if ($eligibilityStatus === 'Conditional') {
+            $recommendations[] = "Submit application during review period as spots are limited and subject to availability";
+        }
+        
+        if ($eligibilityStatus === 'Eligible') {
+            $recommendations[] = "Excellent standing! Apply immediately as you meet all primary requirements";
+        }
+        
+        if ($eligibilityStatus === 'Review Required') {
+            $recommendations[] = "Schedule academic counseling to discuss improvement strategies for scholarship eligibility";
         }
         
         return implode("; ", $recommendations);
