@@ -1,3 +1,7 @@
+<?php
+// Include environment configuration
+require_once 'config.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -291,10 +295,14 @@
         <?php
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
+                // Get environment-aware SOAP server configuration
+                $soapLocation = Config::getSoapServerUrl();
+                $soapUri = Config::getSoapUri();
+                
                 // First try to get the analysis results
                 $client = new SoapClient(null, array(
-                    'location' => 'http://localhost/student_analytics/soap_server.php',
-                    'uri' => 'http://localhost/student_analytics',
+                    'location' => $soapLocation,
+                    'uri' => $soapUri,
                     'trace' => 1,
                     'connection_timeout' => 30
                 ));

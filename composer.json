@@ -9,7 +9,11 @@
         }
     ],
     "require": {
-        "php": ">=7.4"
+        "php": ">=7.4",
+        "ext-gd": "*",
+        "ext-soap": "*",
+        "ext-xml": "*",
+        "ext-json": "*"
     },
     "autoload": {
         "psr-4": {
@@ -19,5 +23,8 @@
     },
     "config": {
         "optimize-autoloader": true
+    },
+    "scripts": {
+        "heroku-postbuild": "echo 'Student Analytics deployed successfully'"
     }
 }

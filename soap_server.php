@@ -10,7 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
-// Include chart generation class
+// Include environment configuration and chart generation class
+require_once 'config.php';
 require_once 'charts/ChartGenerator.php';
 
 class StudentAnalyticsService {
@@ -992,10 +993,13 @@ class StudentAnalyticsService {
     }
 }
 
-// Create SOAP server
+// Create SOAP server with environment-aware configuration
+$soapUri = Config::getSoapUri();
+$soapLocation = Config::getSoapServerUrl();
+
 $server = new SoapServer(null, array(
-    'uri' => 'http://localhost/student_analytics',
-    'location' => 'http://localhost/student_analytics/soap_server.php'
+    'uri' => $soapUri,
+    'location' => $soapLocation
 ));
 
 $server->setClass('StudentAnalyticsService');
