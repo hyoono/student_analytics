@@ -1,32 +1,35 @@
 <?php
 /**
  * Configuration helper for Student Analytics
- * Handles environment-specific settings for both XAMPP and Heroku
+ * Handles environment-specific settings for both XAMPP and Azure App Service
  */
 
 class Config {
-    private static $isHeroku = null;
+    private static $isAzure = null;
     
     /**
-     * Detect if running on Heroku
+     * Detect if running on Azure App Service
      */
-    public static function isHeroku() {
-        if (self::$isHeroku === null) {
-            self::$isHeroku = isset($_ENV['DYNO']) || isset($_SERVER['DYNO']) || 
-                             !empty(getenv('DYNO')) || !empty(getenv('PORT'));
+    public static function isAzure() {
+        if (self::$isAzure === null) {
+            // Azure App Service environment detection
+            self::$isAzure = isset($_ENV['WEBSITE_SITE_NAME']) || isset($_SERVER['WEBSITE_SITE_NAME']) || 
+                             !empty(getenv('WEBSITE_SITE_NAME')) || 
+                             isset($_ENV['APPSETTING_WEBSITE_SITE_NAME']) || isset($_SERVER['APPSETTING_WEBSITE_SITE_NAME']) ||
+                             strpos($_SERVER['HTTP_HOST'] ?? '', '.azurewebsites.net') !== false;
         }
-        return self::$isHeroku;
+        return self::$isAzure;
     }
     
     /**
      * Get the base URL for the application
      */
     public static function getBaseUrl() {
-        if (self::isHeroku()) {
-            // On Heroku, use the app URL
-            $appName = getenv('HEROKU_APP_NAME');
-            if ($appName) {
-                return "https://{$appName}.herokuapp.com";
+        if (self::isAzure()) {
+            // On Azure App Service, use the app URL
+            $siteName = getenv('WEBSITE_SITE_NAME') ?: getenv('APPSETTING_WEBSITE_SITE_NAME');
+            if ($siteName) {
+                return "https://{$siteName}.azurewebsites.net";
             }
             // Fallback to detect from HTTP_HOST
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -67,15 +70,15 @@ class Config {
      * Get environment name
      */
     public static function getEnvironment() {
-        return self::isHeroku() ? 'heroku' : 'local';
+        return self::isAzure() ? 'azure' : 'local';
     }
     
     /**
      * Get PHP settings optimized for the environment
      */
     public static function optimizePhpSettings() {
-        if (self::isHeroku()) {
-            // Heroku optimizations
+        if (self::isAzure()) {
+            // Azure App Service optimizations
             ini_set('memory_limit', '512M');
             ini_set('max_execution_time', '30');
             ini_set('max_input_time', '30');

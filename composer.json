@@ -25,6 +25,7 @@
         "optimize-autoloader": true
     },
     "scripts": {
-        "heroku-postbuild": "echo 'Student Analytics deployed successfully'"
+        "post-install-cmd": "echo 'Student Analytics dependencies installed successfully'",
+        "post-update-cmd": "echo 'Student Analytics dependencies updated successfully'"
     }
 }
