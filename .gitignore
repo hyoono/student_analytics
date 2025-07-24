@@ -4,3 +4,21 @@ composer.lock
 .DS_Store
 charts/cache/
 charts/tmp/
+
+# Environment-specific files
+.env
+.env.local
+
+# Heroku files (kept in repo for deployment)
+# Procfile
+# heroku_apache.conf
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
